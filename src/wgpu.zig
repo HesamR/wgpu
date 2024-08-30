@@ -1,490 +1,574 @@
 const std = @import("std");
-const log = std.log.scoped(.wgpu);
 
-pub const EnumType = u32;
-pub const Flags = u32;
+pub const native = @import("native.zig");
 
 pub const Bool = enum(u32) {
     false = 0,
-    true,
+    true = 1,
 };
 
-pub const AdapterType = enum(EnumType) {
-    discrete_gpu = 0x00000000,
-    integrated_gpu = 0x00000001,
-    cpu = 0x00000002,
-    unknown = 0x00000003,
+pub const array_layer_count_undefined = std.math.maxInt(u32);
+pub const copy_stride_undefined = std.math.maxInt(u32);
+pub const depth_slice_undefined = std.math.maxInt(u32);
+pub const limit_u32_undefined = std.math.maxInt(u32);
+pub const limit_u64_undefined = std.math.maxInt(u64);
+pub const mip_level_count_undefined = std.math.maxInt(u32);
+pub const query_set_index_undefined = std.math.maxInt(u32);
+pub const whole_map_size = std.math.maxInt(usize);
+pub const whole_size = std.math.maxInt(u64);
+
+pub const RequestAdapterStatus = enum(c_uint) {
+    success = 0,
+    unavailable = 1,
+    @"error" = 2,
+    unknown = 3,
+
+    _,
 };
 
-pub const AddressMode = enum(EnumType) {
-    repeat = 0x00000000,
-    mirror_repeat = 0x00000001,
-    clamp_to_edge = 0x00000002,
+pub const AdapterType = enum(c_uint) {
+    discrete_gpu = 0,
+    integrated_gpu = 1,
+    cpu = 2,
+    unknown = 3,
+
+    _,
 };
 
-pub const BackendType = enum(EnumType) {
-    undef = 0x00000000,
-    null = 0x00000001,
-    webgpu = 0x00000002,
-    d3d11 = 0x00000003,
-    d3d12 = 0x00000004,
-    metal = 0x00000005,
-    vulkan = 0x00000006,
-    opengl = 0x00000007,
-    opengles = 0x00000008,
+pub const AddressMode = enum(c_uint) {
+    repeat = 0,
+    mirror_repeat = 1,
+    clamp_to_edge = 2,
+
+    _,
 };
 
-pub const BlendFactor = enum(EnumType) {
-    zero = 0x00000000,
-    one = 0x00000001,
-    src = 0x00000002,
-    one_minus_src = 0x00000003,
-    src_alpha = 0x00000004,
-    one_minus_src_alpha = 0x00000005,
-    dst = 0x00000006,
-    one_minus_dst = 0x00000007,
-    dst_alpha = 0x00000008,
-    one_minus_dst_alpha = 0x00000009,
-    src_alpha_saturated = 0x0000000a,
-    constant = 0x0000000b,
-    one_minus_constant = 0x0000000c,
+pub const BackendType = enum(c_uint) {
+    undefined = 0,
+    null = 1,
+    web_gpu = 2,
+    d3_d11 = 3,
+    d3_d12 = 4,
+    metal = 5,
+    vulkan = 6,
+    open_gl = 7,
+    open_gles = 8,
+
+    _,
 };
 
-pub const BlendOperation = enum(EnumType) {
-    add = 0x00000000,
-    subtract = 0x00000001,
-    reverse_subtract = 0x00000002,
-    min = 0x00000003,
-    max = 0x00000004,
+pub const BufferBindingType = enum(c_uint) {
+    undefined = 0,
+    uniform = 1,
+    storage = 2,
+    read_only_storage = 3,
+
+    _,
 };
 
-pub const BufferBindingType = enum(EnumType) {
-    undef = 0x00000000,
-    uniform = 0x00000001,
-    storage = 0x00000002,
-    read_only_storage = 0x00000003,
+pub const SamplerBindingType = enum(c_uint) {
+    undefined = 0,
+    filtering = 1,
+    non_filtering = 2,
+    comparison = 3,
+
+    _,
 };
 
-pub const BufferMapAsyncStatus = enum(EnumType) {
-    success = 0x00000000,
-    validation_error = 0x00000001,
-    unknown = 0x00000002,
-    device_lost = 0x00000003,
-    destroyed_before_callback = 0x00000004,
-    unmapped_before_callback = 0x00000005,
-    mapping_already_pending = 0x00000006,
-    offset_out_of_range = 0x00000007,
-    size_out_of_range = 0x00000008,
+pub const TextureSampleType = enum(c_uint) {
+    undefined = 0,
+    float = 1,
+    unfilterable_float = 2,
+    depth = 3,
+    sint = 4,
+    uint = 5,
+
+    _,
 };
 
-pub const BufferMapState = enum(EnumType) {
-    unmapped = 0x00000000,
-    pending = 0x00000001,
-    mapped = 0x00000002,
+pub const StorageTextureAccess = enum(c_uint) {
+    undefined = 0,
+    write_only = 1,
+    read_only = 2,
+    read_write = 3,
+
+    _,
 };
 
-pub const CompareFunction = enum(EnumType) {
-    undef = 0x00000000,
-    never = 0x00000001,
-    less = 0x00000002,
-    less_equal = 0x00000003,
-    greater = 0x00000004,
-    greater_equal = 0x00000005,
-    equal = 0x00000006,
-    not_equal = 0x00000007,
-    always = 0x00000008,
-};
-pub const CompilationInfoRequestStatus = enum(EnumType) {
-    success = 0x00000000,
-    err = 0x00000001,
-    device_lost = 0x00000002,
-    unknown = 0x00000003,
-};
+pub const BlendFactor = enum(c_uint) {
+    zero = 0,
+    one = 1,
+    src = 2,
+    one_minus_src = 3,
+    src_alpha = 4,
+    one_minus_src_alpha = 5,
+    dst = 6,
+    one_minus_dst = 7,
+    dst_alpha = 8,
+    one_minus_dst_alpha = 9,
+    src_alpha_saturated = 10,
+    constant = 11,
+    one_minus_constant = 12,
 
-pub const CompilationMessageType = enum(EnumType) {
-    err = 0x00000000,
-    warning = 0x00000001,
-    info = 0x00000002,
+    _,
 };
 
-pub const CompositeAlphaMode = enum(EnumType) {
-    auto = 0x00000000,
-    opaq = 0x00000001,
-    premultiplied = 0x00000002,
-    unpremultiplied = 0x00000003,
-    inherit = 0x00000004,
+pub const BlendOperation = enum(c_uint) {
+    add = 0,
+    subtract = 1,
+    reverse_subtract = 2,
+    min = 3,
+    max = 4,
+
+    _,
 };
 
-pub const CreatePipelineAsyncStatus = enum(EnumType) {
-    success = 0x00000000,
-    validation_error = 0x00000001,
-    internal_error = 0x00000002,
-    device_lost = 0x00000003,
-    device_destroyed = 0x00000004,
-    unknown = 0x00000005,
+pub const BufferMapAsyncStatus = enum(c_uint) {
+    success = 0,
+    validation_error = 1,
+    unknown = 2,
+    device_lost = 3,
+    destroyed_before_callback = 4,
+    unmapped_before_callback = 5,
+    mapping_already_pending = 6,
+    offset_out_of_range = 7,
+    size_out_of_range = 8,
+
+    _,
 };
 
-pub const CullMode = enum(EnumType) {
-    none = 0x00000000,
-    front = 0x00000001,
-    back = 0x00000002,
+pub const BufferMapState = enum(c_uint) {
+    unmapped = 0,
+    pending = 1,
+    mapped = 2,
+
+    _,
 };
 
-pub const DeviceLostReason = enum(EnumType) {
-    undef = 0x00000000,
-    destroyed = 0x00000001,
+pub const CompareFunction = enum(c_uint) {
+    undefined = 0,
+    never = 1,
+    less = 2,
+    less_equal = 3,
+    greater = 4,
+    greater_equal = 5,
+    equal = 6,
+    not_equal = 7,
+    always = 8,
+
+    _,
 };
 
-pub const ErrorFilter = enum(EnumType) {
-    validation = 0x00000000,
-    out_of_memory = 0x00000001,
-    internal = 0x00000002,
+pub const CompilationInfoRequestStatus = enum(c_uint) {
+    success = 0,
+    @"error" = 1,
+    device_lost = 2,
+    unknown = 3,
+
+    _,
 };
 
-pub const ErrorType = enum(EnumType) {
-    no_error = 0x00000000,
-    validation = 0x00000001,
-    out_of_memory = 0x00000002,
-    internal = 0x00000003,
-    unknown = 0x00000004,
-    device_lost = 0x00000005,
+pub const CompilationMessageType = enum(c_uint) {
+    @"error" = 0,
+    warning = 1,
+    info = 2,
+
+    _,
 };
 
-pub const FeatureName = enum(EnumType) {
-    undef = 0x00000000,
-    depth_clip_control = 0x00000001,
-    depth32_float_stencil8 = 0x00000002,
-    time_stamp_query = 0x00000003,
-    texture_compression_bc = 0x00000004,
-    texture_compression_etc_2 = 0x00000005,
-    texture_compression_astc = 0x00000006,
-    indirect_first_instance = 0x00000007,
-    shader_f16 = 0x00000008,
-    rg11_b10u_float_renderable = 0x00000009,
-    bgra8_unorm_storage = 0x0000000A,
-    float32_filterable = 0x0000000B,
+pub const CompositeAlphaMode = enum(c_uint) {
+    auto = 0,
+    @"opaque" = 1,
+    premultiplied = 2,
+    unpremultiplied = 3,
+    inherit = 4,
 
-    // WGPU-Native features
-    push_constants = 0x00030001,
-    texture_adapter_specific_format_features = 0x00030002,
-    multi_draw_indirect = 0x00030003,
-    multi_draw_indirect_count = 0x00030004,
-    vertex_writable_storage = 0x00030005,
-    texture_binding_array = 0x00030006,
-    sampled_texture_and_storage_buffer_array_non_uniform_indexing = 0x00030007,
-    pipeline_statistics_query = 0x00030008,
+    _,
 };
 
-pub const FilterMode = enum(EnumType) {
-    nearest = 0x00000000,
-    linear = 0x00000001,
+pub const CreatePipelineAsyncStatus = enum(c_uint) {
+    success = 0,
+    validation_error = 1,
+    internal_error = 2,
+    device_lost = 3,
+    device_destroyed = 4,
+    unknown = 5,
+
+    _,
 };
 
-pub const FrontFace = enum(EnumType) {
-    ccw = 0x00000000,
-    cw = 0x00000001,
+pub const CullMode = enum(c_uint) {
+    none = 0,
+    front = 1,
+    back = 2,
+
+    _,
 };
 
-pub const IndexFormat = enum(EnumType) {
-    undef = 0x00000000,
-    uint16 = 0x00000001,
-    uint32 = 0x00000002,
+pub const DeviceLostReason = enum(c_uint) {
+    unknown = 1,
+    destroyed = 2,
+
+    _,
 };
 
-pub const LoadOp = enum(EnumType) {
-    undef = 0x00000000,
-    clear = 0x00000001,
-    load = 0x00000002,
+pub const ErrorFilter = enum(c_uint) {
+    validation = 0,
+    out_of_memory = 1,
+    internal = 2,
+
+    _,
 };
 
-pub const MipmapFilterMode = enum(EnumType) {
-    nearest = 0x00000000,
-    linear = 0x00000001,
+pub const ErrorType = enum(c_uint) {
+    no_error = 0,
+    validation = 1,
+    out_of_memory = 2,
+    internal = 3,
+    unknown = 4,
+    device_lost = 5,
+
+    _,
 };
 
-pub const PowerPreference = enum(EnumType) {
-    undef = 0x00000000,
-    low_power = 0x00000001,
-    high_performance = 0x00000002,
+pub const FeatureName = enum(c_uint) {
+    undefined = 0,
+    depth_clip_control = 1,
+    depth32_float_stencil8 = 2,
+    timestamp_query = 3,
+    texture_compression_bc = 4,
+    texture_compression_etc2 = 5,
+    texture_compression_astc = 6,
+    indirect_first_instance = 7,
+    shader_f16 = 8,
+    rg11_b10_ufloat_renderable = 9,
+    bgra8_unorm_storage = 10,
+    float32_filterable = 11,
+
+    _,
 };
 
-pub const PresentMode = enum(EnumType) {
-    fifo = 0x00000000,
-    fifo_relaxed = 0x00000001,
-    immediate = 0x00000002,
-    mailbox = 0x00000003,
+pub const FilterMode = enum(c_uint) {
+    nearest = 0,
+    linear = 1,
+
+    _,
 };
 
-pub const PrimitiveTopology = enum(EnumType) {
-    point_list = 0x00000000,
-    line_list = 0x00000001,
-    line_strip = 0x00000002,
-    triangle_list = 0x00000003,
-    triangle_strip = 0x00000004,
+pub const FrontFace = enum(c_uint) {
+    ccw = 0,
+    cw = 1,
+
+    _,
 };
 
-pub const QueryType = enum(EnumType) {
-    occlusion = 0x00000000,
-    timestamp = 0x00000001,
+pub const IndexFormat = enum(c_uint) {
+    undefined = 0,
+    uint16 = 1,
+    uint32 = 2,
+
+    _,
 };
 
-pub const QueueWorkDoneStatus = enum(EnumType) {
-    success = 0x00000000,
-    err = 0x00000001,
-    unknown = 0x00000002,
-    device_lost = 0x00000003,
+pub const VertexStepMode = enum(c_uint) {
+    vertex = 0,
+    instance = 1,
+    vertex_buffer_not_used = 2,
+
+    _,
 };
 
-pub const RequestAdapterStatus = enum(EnumType) {
-    success = 0x00000000,
-    unavailable = 0x00000001,
-    err = 0x00000002,
-    unknown = 0x00000003,
+pub const LoadOp = enum(c_uint) {
+    undefined = 0,
+    clear = 1,
+    load = 2,
+
+    _,
 };
 
-pub const RequestDeviceStatus = enum(EnumType) {
-    success = 0x00000000,
-    err = 0x00000001,
-    unknown = 0x00000002,
+pub const MipmapFilterMode = enum(c_uint) {
+    nearest = 0,
+    linear = 1,
+
+    _,
 };
 
-pub const SType = enum(EnumType) {
-    invalid = 0x00000000,
-    surface_descriptor_from_metal_layer = 0x00000001,
-    surface_descriptor_from_windows_hwnd = 0x00000002,
-    surface_descriptor_from_xlib_window = 0x00000003,
-    surface_descriptor_from_canvas_html_selector = 0x00000004,
-    shader_module_spirv_descriptor = 0x00000005,
-    shader_module_wgsl_descriptor = 0x00000006,
-    primitive_depth_clip_control = 0x00000007,
-    surface_descriptor_from_wayland_surface = 0x00000008,
-    surface_descriptor_from_android_native_window = 0x00000009,
-    surface_descriptor_from_xcb_window = 0x0000000a,
-    render_pass_descriptor_max_draw_count = 0x0000000f,
+pub const StoreOp = enum(c_uint) {
+    undefined = 0,
+    store = 1,
+    discard = 2,
 
-    // Start at 0003 since that's allocated range for wgpu-native
-    device_extras = 0x00030001,
-    required_limits_extras = 0x00030002,
-    pipeline_layout_extras = 0x00030003,
-    shader_module_glsl_descriptor = 0x00030004,
-    supported_limits_extras = 0x00030005,
-    instance_extras = 0x00030006,
-    bind_group_entry_extras = 0x00030007,
-    bind_group_layout_entry_extras = 0x00030008,
-    query_set_descriptor_extras = 0x00030009,
+    _,
 };
 
-pub const SamplerBindingType = enum(EnumType) {
-    undef = 0x00000000,
-    filtering = 0x00000001,
-    non_filtering = 0x00000002,
-    comparison = 0x00000003,
+pub const PowerPreference = enum(c_uint) {
+    undefined = 0,
+    low_power = 1,
+    high_performance = 2,
+
+    _,
 };
 
-pub const StencilOperation = enum(EnumType) {
-    keep = 0x00000000,
-    zero = 0x00000001,
-    replace = 0x00000002,
-    invert = 0x00000003,
-    increment_clamp = 0x00000004,
-    decrement_clamp = 0x00000005,
-    increment_wrap = 0x00000006,
-    decrement_wrap = 0x00000007,
+pub const PresentMode = enum(c_uint) {
+    fifo = 0,
+    fifo_relaxed = 1,
+    immediate = 2,
+    mailbox = 3,
+
+    _,
 };
 
-pub const StorageTextureAccess = enum(EnumType) {
-    undef = 0x00000000,
-    write_only = 0x00000001,
-    read_only = 0x00000002,
-    read_write = 0x00000003,
+pub const PrimitiveTopology = enum(c_uint) {
+    point_list = 0,
+    line_list = 1,
+    line_strip = 2,
+    triangle_list = 3,
+    triangle_strip = 4,
+
+    _,
 };
 
-pub const StoreOp = enum(EnumType) {
-    undef = 0x00000000,
-    store = 0x00000001,
-    discard = 0x00000002,
+pub const QueryType = enum(c_uint) {
+    occlusion = 0,
+    timestamp = 1,
+
+    _,
 };
 
-pub const SurfaceGetCurrentTextureStatus = enum(EnumType) {
-    success = 0x00000000,
-    timeout = 0x00000001,
-    outdated = 0x00000002,
-    lost = 0x00000003,
-    out_of_memory = 0x00000004,
-    device_lost = 0x00000005,
+pub const QueueWorkDoneStatus = enum(c_uint) {
+    success = 0,
+    @"error" = 1,
+    unknown = 2,
+    device_lost = 3,
+
+    _,
 };
 
-pub const TextureAspect = enum(EnumType) {
-    all = 0x00000000,
-    stencil_only = 0x00000001,
-    depth_only = 0x00000002,
+pub const RequestDeviceStatus = enum(c_uint) {
+    success = 0,
+    @"error" = 1,
+    unknown = 2,
+
+    _,
 };
 
-pub const TextureDimension = enum(EnumType) {
-    dim_1d = 0x00000000,
-    dim_2d = 0x00000001,
-    dim_3d = 0x00000002,
+pub const StencilOperation = enum(c_uint) {
+    keep = 0,
+    zero = 1,
+    replace = 2,
+    invert = 3,
+    increment_clamp = 4,
+    decrement_clamp = 5,
+    increment_wrap = 6,
+    decrement_wrap = 7,
+
+    _,
 };
 
-pub const TextureFormat = enum(EnumType) {
-    undef = 0x00000000,
-    r8_unorm = 0x00000001,
-    r8_snorm = 0x00000002,
-    r8_uint = 0x00000003,
-    r8_sint = 0x00000004,
-    r16_uint = 0x00000005,
-    r16_sint = 0x00000006,
-    r16_float = 0x00000007,
-    rg8_unorm = 0x00000008,
-    rg8_snorm = 0x00000009,
-    rg8_uint = 0x0000000A,
-    rg8_sint = 0x0000000B,
-    r32_float = 0x0000000C,
-    r32_uint = 0x0000000D,
-    r32_sint = 0x0000000E,
-    rg16_uint = 0x0000000F,
-    rg16_sint = 0x00000010,
-    rg16_float = 0x00000011,
-    rgba8_unorm = 0x00000012,
-    rgba8_unorm_srgb = 0x00000013,
-    rgba8_snorm = 0x00000014,
-    rgba8_uint = 0x00000015,
-    rgba8_sint = 0x00000016,
-    bgra8_unorm = 0x00000017,
-    bgra8_unorm_srgb = 0x00000018,
-    rgb10_a2_uint = 0x00000019,
-    rgb10_a2_unorm = 0x0000001A,
-    rg11_b10_ufloat = 0x0000001B,
-    rgb9_e5_ufloat = 0x0000001C,
-    rg32_float = 0x0000001D,
-    rg32_uint = 0x0000001E,
-    rg32_sint = 0x0000001F,
-    rgba16_uint = 0x00000020,
-    rgba16_sint = 0x00000021,
-    rgba16_float = 0x00000022,
-    rgba32_float = 0x00000023,
-    rgba32_uint = 0x00000024,
-    rgba32_sint = 0x00000025,
-    stencil8 = 0x00000026,
-    depth16_unorm = 0x00000027,
-    depth24_plus = 0x00000028,
-    depth24_plus_stencil8 = 0x00000029,
-    depth32_float = 0x0000002A,
-    depth32_float_stencil8 = 0x0000002B,
-    bc1_rgba_unorm = 0x0000002C,
-    bc1_rgba_unorm_srgb = 0x0000002D,
-    bc2_rgba_unorm = 0x0000002E,
-    bc2_rgba_unorm_srgb = 0x0000002F,
-    bc3_rgba_unorm = 0x00000030,
-    bc3_rgba_unorm_srgb = 0x00000031,
-    bc4_r_unorm = 0x00000032,
-    bc4_r_snorm = 0x00000033,
-    bc5_rg_unorm = 0x00000034,
-    bc5_rg_snorm = 0x00000035,
-    bc6_hrgb_ufloat = 0x00000036,
-    bc6_hrgb_float = 0x00000037,
-    bc7_rgba_unorm = 0x00000038,
-    bc7_rgba_unorm_srgb = 0x00000039,
-    etc2_rgb8_unorm = 0x0000003A,
-    etc2_rgb8_unorm_srgb = 0x0000003B,
-    etc2_rgb8_a1_unorm = 0x0000003C,
-    etc2_rgb8_a1_unorm_srgb = 0x0000003D,
-    etc2_rgba8_unorm = 0x0000003E,
-    etc2_rgba8_unorm_srgb = 0x0000003F,
-    eacr11_unorm = 0x00000040,
-    eacr11_snorm = 0x00000041,
-    eacrg11_unorm = 0x00000042,
-    eacrg11_snorm = 0x00000043,
-    astc4x4_unorm = 0x00000044,
-    astc4x4_unorm_srgb = 0x00000045,
-    astc5x4_unorm = 0x00000046,
-    astc5x4_unorm_srgb = 0x00000047,
-    astc5x5_unorm = 0x00000048,
-    astc5x5_unorm_srgb = 0x00000049,
-    astc6x5_unorm = 0x0000004A,
-    astc6x5_unorm_srgb = 0x0000004B,
-    astc6x6_unorm = 0x0000004C,
-    astc6x6_unorm_srgb = 0x0000004D,
-    astc8x5_unorm = 0x0000004E,
-    astc8x5_unorm_srgb = 0x0000004F,
-    astc8x6_unorm = 0x00000050,
-    astc8x6_unorm_srgb = 0x00000051,
-    astc8x8_unorm = 0x00000052,
-    astc8x8_unorm_srgb = 0x00000053,
-    astc10x5_unorm = 0x00000054,
-    astc10x5_unorm_srgb = 0x00000055,
-    astc10x6_unorm = 0x00000056,
-    astc10x6_unorm_srgb = 0x00000057,
-    astc10x8_unorm = 0x00000058,
-    astc10x8_unorm_srgb = 0x00000059,
-    astc10x10_unorm = 0x0000005A,
-    astc10x10_unorm_srgb = 0x0000005B,
-    astc12x10_unorm = 0x0000005C,
-    astc12x10_unorm_srgb = 0x0000005D,
-    astc12x12_unorm = 0x0000005E,
-    astc12x12_unorm_srgb = 0x0000005F,
+pub const SType = enum(c_uint) {
+    invalid = 0,
+    surface_descriptor_from_metal_layer = 1,
+    surface_descriptor_from_windows_hwnd = 2,
+    surface_descriptor_from_xlib_window = 3,
+    surface_descriptor_from_canvas_html_selector = 4,
+    shader_module_spirv_descriptor = 5,
+    shader_module_wgsl_descriptor = 6,
+    primitive_depth_clip_control = 7,
+    surface_descriptor_from_wayland_surface = 8,
+    surface_descriptor_from_android_native_window = 9,
+    surface_descriptor_from_xcb_window = 10,
+    render_pass_descriptor_max_draw_count = 15,
+
+    _,
 };
 
-pub const TextureSampleType = enum(EnumType) {
-    undef = 0x00000000,
-    float = 0x00000001,
-    unfilterable_float = 0x00000002,
-    depth = 0x00000003,
-    sint = 0x00000004,
-    uint = 0x00000005,
+pub const SurfaceGetCurrentTextureStatus = enum(c_uint) {
+    success = 0,
+    timeout = 1,
+    outdated = 2,
+    lost = 3,
+    out_of_memory = 4,
+    device_lost = 5,
+
+    _,
 };
 
-pub const TextureViewDimension = enum(EnumType) {
-    undef = 0x00000000,
-    dim_1d = 0x00000001,
-    dim_2d = 0x00000002,
-    dim_2d_array = 0x00000003,
-    dim_cube = 0x00000004,
-    dim_cube_array = 0x00000005,
-    dim_3d = 0x00000006,
+pub const TextureAspect = enum(c_uint) {
+    all = 0,
+    stencil_only = 1,
+    depth_only = 2,
+
+    _,
 };
 
-pub const VertexFormat = enum(EnumType) {
-    undef = 0x00000000,
-    uint8x2 = 0x00000001,
-    uint8x4 = 0x00000002,
-    sint8x2 = 0x00000003,
-    sint8x4 = 0x00000004,
-    unorm8x2 = 0x00000005,
-    unorm8x4 = 0x00000006,
-    snorm8x2 = 0x00000007,
-    snorm8x4 = 0x00000008,
-    uint16x2 = 0x00000009,
-    uint16x4 = 0x0000000a,
-    sint16x2 = 0x0000000b,
-    sint16x4 = 0x0000000c,
-    unorm16x2 = 0x0000000d,
-    unorm16x4 = 0x0000000e,
-    snorm16x2 = 0x0000000f,
-    snorm16x4 = 0x00000010,
-    float16x2 = 0x00000011,
-    float16x4 = 0x00000012,
-    float32 = 0x00000013,
-    float32x2 = 0x00000014,
-    float32x3 = 0x00000015,
-    float32x4 = 0x00000016,
-    uint32 = 0x00000017,
-    uint32x2 = 0x00000018,
-    uint32x3 = 0x00000019,
-    uint32x4 = 0x0000001a,
-    sint32 = 0x0000001b,
-    sint32x2 = 0x0000001c,
-    sint32x3 = 0x0000001d,
-    sint32x4 = 0x0000001e,
+pub const TextureDimension = enum(c_uint) {
+    @"1_d" = 0,
+    @"2_d" = 1,
+    @"3_d" = 2,
+
+    _,
 };
 
-pub const VertexStepMode = enum(EnumType) {
-    vertex = 0x00000000,
-    instance = 0x00000001,
-    vertex_buffer_not_used = 0x00000002,
+pub const TextureFormat = enum(c_uint) {
+    undefined = 0,
+    r8_unorm = 1,
+    r8_snorm = 2,
+    r8_uint = 3,
+    r8_sint = 4,
+    r16_uint = 5,
+    r16_sint = 6,
+    r16_float = 7,
+    rg8_unorm = 8,
+    rg8_snorm = 9,
+    rg8_uint = 10,
+    rg8_sint = 11,
+    r32_float = 12,
+    r32_uint = 13,
+    r32_sint = 14,
+    rg16_uint = 15,
+    rg16_sint = 16,
+    rg16_float = 17,
+    rgba8_unorm = 18,
+    rgba8_unorm_srgb = 19,
+    rgba8_snorm = 20,
+    rgba8_uint = 21,
+    rgba8_sint = 22,
+    bgra8_unorm = 23,
+    bgra8_unorm_srgb = 24,
+    rgb10_a2_uint = 25,
+    rgb10_a2_unorm = 26,
+    rg11_b10_ufloat = 27,
+    rgb9_e5_ufloat = 28,
+    rg32_float = 29,
+    rg32_uint = 30,
+    rg32_sint = 31,
+    rgba16_uint = 32,
+    rgba16_sint = 33,
+    rgba16_float = 34,
+    rgba32_float = 35,
+    rgba32_uint = 36,
+    rgba32_sint = 37,
+    stencil8 = 38,
+    depth16_unorm = 39,
+    depth24_plus = 40,
+    depth24_plus_stencil8 = 41,
+    depth32_float = 42,
+    depth32_float_stencil8 = 43,
+    bc1_rgba_unorm = 44,
+    bc1_rgba_unorm_srgb = 45,
+    bc2_rgba_unorm = 46,
+    bc2_rgba_unorm_srgb = 47,
+    bc3_rgba_unorm = 48,
+    bc3_rgba_unorm_srgb = 49,
+    bc4_r_unorm = 50,
+    bc4_r_snorm = 51,
+    bc5_rg_unorm = 52,
+    bc5_rg_snorm = 53,
+    bc6_h_rgb_ufloat = 54,
+    bc6_h_rgb_float = 55,
+    bc7_rgba_unorm = 56,
+    bc7_rgba_unorm_srgb = 57,
+    etc2_rgb8_unorm = 58,
+    etc2_rgb8_unorm_srgb = 59,
+    etc2_rgb8_a1_unorm = 60,
+    etc2_rgb8_a1_unorm_srgb = 61,
+    etc2_rgba8_unorm = 62,
+    etc2_rgba8_unorm_srgb = 63,
+    eac_r11_unorm = 64,
+    eac_r11_snorm = 65,
+    eac_rg11_unorm = 66,
+    eac_rg11_snorm = 67,
+    astc_4x4_unorm = 68,
+    astc_4x4_unorm_srgb = 69,
+    astc_5x4_unorm = 70,
+    astc_5x4_unorm_srgb = 71,
+    astc_5x5_unorm = 72,
+    astc_5x5_unorm_srgb = 73,
+    astc_6x5_unorm = 74,
+    astc_6x5_unorm_srgb = 75,
+    astc_6x6_unorm = 76,
+    astc_6x6_unorm_srgb = 77,
+    astc_8x5_unorm = 78,
+    astc_8x5_unorm_srgb = 79,
+    astc_8x6_unorm = 80,
+    astc_8x6_unorm_srgb = 81,
+    astc_8x8_unorm = 82,
+    astc_8x8_unorm_srgb = 83,
+    astc_10x5_unorm = 84,
+    astc_10x5_unorm_srgb = 85,
+    astc_10x6_unorm = 86,
+    astc_10x6_unorm_srgb = 87,
+    astc_10x8_unorm = 88,
+    astc_10x8_unorm_srgb = 89,
+    astc_10x10_unorm = 90,
+    astc_10x10_unorm_srgb = 91,
+    astc_12x10_unorm = 92,
+    astc_12x10_unorm_srgb = 93,
+    astc_12x12_unorm = 94,
+    astc_12x12_unorm_srgb = 95,
+
+    _,
 };
 
-pub const BufferUsageFlags = packed struct(Flags) {
+pub const TextureViewDimension = enum(c_uint) {
+    undefined = 0,
+    @"1_d" = 1,
+    @"2_d" = 2,
+    @"2_d_array" = 3,
+    cube = 4,
+    cube_array = 5,
+    @"3_d" = 6,
+
+    _,
+};
+
+pub const VertexFormat = enum(c_uint) {
+    undefined = 0,
+    uint8x2 = 1,
+    uint8x4 = 2,
+    sint8x2 = 3,
+    sint8x4 = 4,
+    unorm8x2 = 5,
+    unorm8x4 = 6,
+    snorm8x2 = 7,
+    snorm8x4 = 8,
+    uint16x2 = 9,
+    uint16x4 = 10,
+    sint16x2 = 11,
+    sint16x4 = 12,
+    unorm16x2 = 13,
+    unorm16x4 = 14,
+    snorm16x2 = 15,
+    snorm16x4 = 16,
+    float16x2 = 17,
+    float16x4 = 18,
+    float32 = 19,
+    float32x2 = 20,
+    float32x3 = 21,
+    float32x4 = 22,
+    uint32 = 23,
+    uint32x2 = 24,
+    uint32x3 = 25,
+    uint32x4 = 26,
+    sint32 = 27,
+    sint32x2 = 28,
+    sint32x3 = 29,
+    sint32x4 = 30,
+
+    _,
+};
+
+pub const WgslFeatureName = enum(c_uint) {
+    undefined = 0,
+    readonly_and_readwrite_storage_textures = 1,
+    packed4x8_integer_dot_product = 2,
+    unrestricted_pointer_parameters = 3,
+    pointer_composite_access = 4,
+
+    _,
+};
+
+pub const BufferUsage = packed struct(u32) {
     map_read: bool = false,
     map_write: bool = false,
     copy_src: bool = false,
@@ -499,30 +583,23 @@ pub const BufferUsageFlags = packed struct(Flags) {
     _padding: u22 = 0,
 };
 
-pub const ColorWriteMaskFlags = packed struct(Flags) {
+pub const ColorWriteMask = packed struct(u32) {
     red: bool = false,
     green: bool = false,
     blue: bool = false,
     alpha: bool = false,
 
     _padding: u28 = 0,
-
-    pub const all = ColorWriteMaskFlags{
-        .red = true,
-        .green = true,
-        .blue = true,
-        .alpha = true,
-    };
 };
 
-pub const MapModeFlags = packed struct(Flags) {
+pub const MapMode = packed struct(u32) {
     read: bool = false,
     write: bool = false,
 
     _padding: u30 = 0,
 };
 
-pub const ShaderStageFlags = packed struct(Flags) {
+pub const ShaderStage = packed struct(u32) {
     vertex: bool = false,
     fragment: bool = false,
     compute: bool = false,
@@ -530,7 +607,7 @@ pub const ShaderStageFlags = packed struct(Flags) {
     _padding: u29 = 0,
 };
 
-pub const TextureUsageFlags = packed struct(Flags) {
+pub const TextureUsage = packed struct(u32) {
     copy_src: bool = false,
     copy_dst: bool = false,
     texture_binding: bool = false,
@@ -539,6 +616,9 @@ pub const TextureUsageFlags = packed struct(Flags) {
 
     _padding: u27 = 0,
 };
+
+pub const DeviceLostCallback = *const fn (reason: DeviceLostReason, message: [*:0]const u8, userdata: *anyopaque) callconv(.C) void;
+pub const ErrorCallback = *const fn (type: ErrorType, message: [*:0]const u8, userdata: *anyopaque) callconv(.C) void;
 
 pub const ChainedStruct = extern struct {
     next: ?*const ChainedStruct = null,
@@ -550,26 +630,127 @@ pub const ChainedStructOut = extern struct {
     s_type: SType,
 };
 
-pub const AdapterProperties = extern struct {
-    next_in_chain: ?*ChainedStructOut = null,
-    vendor_id: u32,
-    vendor_name: [*:0]const u8,
-    architecture: [*:0]const u8,
-    device_id: u32,
-    name: [*:0]const u8,
-    driver_description: [*:0]const u8,
-    adapter_type: AdapterType,
+pub const RequestAdapterOptions = extern struct {
+    next_in_chain: ?*const ChainedStruct = null,
+    compatible_surface: ?Surface = null,
+    power_preference: PowerPreference,
     backend_type: BackendType,
+    force_fallback_adapter: Bool,
+};
+
+pub const AdapterInfo = extern struct {
+    next_in_chain: ?*ChainedStructOut,
+    vendor: [*:0]const u8,
+    architecture: [*:0]const u8,
+    device: [*:0]const u8,
+    description: [*:0]const u8,
+    backend_type: BackendType,
+    adapter_type: AdapterType,
+    vendor_id: u32,
+    device_id: u32,
+
+    extern fn wgpuAdapterInfoFreeMembers(self: AdapterInfo) void;
+    pub const freeMembers = wgpuAdapterInfoFreeMembers;
+};
+
+pub const DeviceDescriptor = extern struct {
+    next_in_chain: ?*const ChainedStruct = null,
+    label: ?[*:0]const u8 = null,
+    required_feature_count: usize,
+    required_features: [*]const FeatureName,
+    required_limits: ?*const RequiredLimits = null,
+    default_queue: QueueDescriptor,
+    device_lost_callback: DeviceLostCallback,
+    device_lost_userdata: *anyopaque,
+    uncaptured_error_callback_info: UncapturedErrorCallbackInfo,
 };
 
 pub const BindGroupEntry = extern struct {
     next_in_chain: ?*const ChainedStruct = null,
     binding: u32,
-    buffer: ?*Buffer = null,
-    offset: u64 = 0,
-    size: u64 = 0,
-    sampler: ?*Sampler = null,
-    texture_view: ?*TextureView = null,
+    buffer: ?Buffer = null,
+    offset: u64,
+    size: u64,
+    sampler: ?Sampler = null,
+    texture_view: ?TextureView = null,
+};
+
+pub const BindGroupDescriptor = extern struct {
+    next_in_chain: ?*const ChainedStruct = null,
+    label: ?[*:0]const u8 = null,
+    layout: BindGroupLayout,
+    entry_count: usize,
+    entries: [*]const BindGroupEntry,
+};
+
+pub const BufferBindingLayout = extern struct {
+    next_in_chain: ?*const ChainedStruct = null,
+    type: BufferBindingType,
+    has_dynamic_offset: Bool,
+    min_binding_size: u64,
+};
+
+pub const SamplerBindingLayout = extern struct {
+    next_in_chain: ?*const ChainedStruct = null,
+    type: SamplerBindingType,
+};
+
+pub const TextureBindingLayout = extern struct {
+    next_in_chain: ?*const ChainedStruct = null,
+    sample_type: TextureSampleType,
+    view_dimension: TextureViewDimension,
+    multisampled: Bool,
+};
+
+pub const SurfaceCapabilities = extern struct {
+    next_in_chain: ?*ChainedStructOut,
+    usages: TextureUsage,
+    format_count: usize,
+    formats: [*]const TextureFormat,
+    present_mode_count: usize,
+    present_modes: [*]const PresentMode,
+    alpha_mode_count: usize,
+    alpha_modes: [*]const CompositeAlphaMode,
+
+    extern fn wgpuSurfaceCapabilitiesFreeMembers(self: SurfaceCapabilities) void;
+    pub const freeMembers = wgpuSurfaceCapabilitiesFreeMembers;
+};
+
+pub const SurfaceConfiguration = extern struct {
+    next_in_chain: ?*const ChainedStruct = null,
+    device: Device,
+    format: TextureFormat,
+    usage: TextureUsage,
+    view_format_count: usize,
+    view_formats: [*]const TextureFormat,
+    alpha_mode: CompositeAlphaMode,
+    width: u32,
+    height: u32,
+    present_mode: PresentMode,
+};
+
+pub const StorageTextureBindingLayout = extern struct {
+    next_in_chain: ?*const ChainedStruct = null,
+    access: StorageTextureAccess,
+    format: TextureFormat,
+    view_dimension: TextureViewDimension,
+};
+
+pub const BindGroupLayoutEntry = extern struct {
+    next_in_chain: ?*const ChainedStruct = null,
+    binding: u32,
+    visibility: ShaderStage,
+    buffer: BufferBindingLayout,
+    sampler: SamplerBindingLayout,
+    texture: TextureBindingLayout,
+    storage_texture: StorageTextureBindingLayout,
+};
+
+pub const BindGroupLayoutDescriptor = extern struct {
+    next_in_chain: ?*const ChainedStruct = null,
+    label: ?[*:0]const u8 = null,
+    entry_count: usize,
+    entries: [*]const BindGroupLayoutEntry,
 };
 
 pub const BlendComponent = extern struct {
@@ -578,19 +759,12 @@ pub const BlendComponent = extern struct {
     dst_factor: BlendFactor,
 };
 
-pub const BufferBindingLayout = extern struct {
-    next_in_chain: ?*const ChainedStruct = null,
-    binding_type: BufferBindingType = .undef,
-    has_dynamic_offset: Bool = .false,
-    min_binding_size: u64 = 0,
-};
-
 pub const BufferDescriptor = extern struct {
     next_in_chain: ?*const ChainedStruct = null,
     label: ?[*:0]const u8 = null,
-    usage: BufferUsageFlags,
+    usage: BufferUsage,
     size: u64,
-    mapped_at_creation: Bool = .false,
+    mapped_at_creation: Bool,
 };
 
 pub const Color = extern struct {
@@ -598,6 +772,12 @@ pub const Color = extern struct {
     g: f64,
     b: f64,
     a: f64,
+};
+
+pub const ConstantEntry = extern struct {
+    next_in_chain: ?*const ChainedStruct = null,
+    key: [*:0]const u8,
+    value: f64,
 };
 
 pub const CommandBufferDescriptor = extern struct {
@@ -610,10 +790,16 @@ pub const CommandEncoderDescriptor = extern struct {
     label: ?[*:0]const u8 = null,
 };
 
+pub const CompilationInfo = extern struct {
+    next_in_chain: ?*const ChainedStruct = null,
+    message_count: usize,
+    messages: [*]const CompilationMessage,
+};
+
 pub const CompilationMessage = extern struct {
     next_in_chain: ?*const ChainedStruct = null,
     message: ?[*:0]const u8 = null,
-    message_type: CompilationMessageType,
+    type: CompilationMessageType,
     line_num: u64,
     line_pos: u64,
     offset: u64,
@@ -623,32 +809,29 @@ pub const CompilationMessage = extern struct {
     utf16_length: u64,
 };
 
+pub const ComputePassDescriptor = extern struct {
+    next_in_chain: ?*const ChainedStruct = null,
+    label: ?[*:0]const u8 = null,
+    timestamp_writes: ?*const ComputePassTimestampWrites = null,
+};
+
 pub const ComputePassTimestampWrites = extern struct {
-    query_set: *QuerySet,
+    query_set: QuerySet,
     beginning_of_pass_write_index: u32,
     end_of_pass_write_index: u32,
 };
 
-pub const ConstantEntry = extern struct {
+pub const ComputePipelineDescriptor = extern struct {
     next_in_chain: ?*const ChainedStruct = null,
-    key: [*:0]const u8,
-    value: f64,
-};
-
-pub const Extent3D = extern struct {
-    width: u32,
-    height: u32,
-    depth_or_array_layers: u32 = 1,
-};
-
-pub const InstanceDescriptor = extern struct {
-    next_in_chain: ?*const ChainedStruct = null,
+    label: ?[*:0]const u8 = null,
+    layout: ?PipelineLayout = null,
+    compute: ProgrammableStageDescriptor,
 };
 
 pub const Limits = extern struct {
-    max_texture_dimension_1d: u32,
-    max_texture_dimension_2d: u32,
-    max_texture_dimension_3d: u32,
+    max_texture_dimension_1_d: u32,
+    max_texture_dimension_2_d: u32,
+    max_texture_dimension_3_d: u32,
     max_texture_array_layers: u32,
     max_bind_groups: u32,
     max_bind_groups_plus_vertex_buffers: u32,
@@ -680,44 +863,78 @@ pub const Limits = extern struct {
     max_compute_workgroups_per_dimension: u32,
 };
 
-pub const MultisampleState = extern struct {
+pub const RequiredLimits = extern struct {
     next_in_chain: ?*const ChainedStruct = null,
-    count: u32 = 1,
-    mask: u32 = 0xffffffff,
-    alpha_to_coverage_enabled: Bool = .false,
+    limits: Limits,
 };
 
-pub const Origin3D = extern struct {
-    x: u32 = 0,
-    y: u32 = 0,
-    z: u32 = 0,
+pub const SupportedLimits = extern struct {
+    next_in_chain: ?*ChainedStructOut,
+    limits: Limits,
+};
+
+pub const Extent_3D = extern struct {
+    width: u32,
+    height: u32,
+    depth_or_array_layers: u32,
+};
+
+pub const ImageCopyBuffer = extern struct {
+    next_in_chain: ?*const ChainedStruct = null,
+    layout: TextureDataLayout,
+    buffer: Buffer,
+};
+
+pub const ImageCopyTexture = extern struct {
+    next_in_chain: ?*const ChainedStruct = null,
+    texture: Texture,
+    mip_level: u32,
+    origin: Origin_3D,
+    aspect: TextureAspect,
+};
+
+pub const InstanceDescriptor = extern struct {
+    next_in_chain: ?*const ChainedStruct = null,
+};
+
+pub const VertexAttribute = extern struct {
+    format: VertexFormat,
+    offset: u64,
+    shader_location: u32,
+};
+
+pub const VertexBufferLayout = extern struct {
+    array_stride: u64,
+    step_mode: VertexStepMode,
+    attribute_count: usize,
+    attributes: [*]const VertexAttribute,
+};
+
+pub const Origin_3D = extern struct {
+    x: u32,
+    y: u32,
+    z: u32,
 };
 
 pub const PipelineLayoutDescriptor = extern struct {
     next_in_chain: ?*const ChainedStruct = null,
     label: ?[*:0]const u8 = null,
     bind_group_layout_count: usize,
-    bind_group_layouts: ?[*]const *BindGroupLayout,
+    bind_group_layouts: [*]const BindGroupLayout,
 };
 
-// Can be chained in PrimitiveState
-pub const PrimitiveDepthClipControl = extern struct {
-    chain: ChainedStruct = .{ .s_type = .primitive_depth_clip_control },
-    unclipped_depth: Bool,
-};
-
-pub const PrimitiveState = extern struct {
+pub const ProgrammableStageDescriptor = extern struct {
     next_in_chain: ?*const ChainedStruct = null,
-    topology: PrimitiveTopology = .triangle_list,
-    strip_index_format: IndexFormat = .undef,
-    front_face: FrontFace = .ccw,
-    cull_mode: CullMode = .none,
+    module: ShaderModule,
+    entry_point: ?[*:0]const u8 = null,
+    constant_count: usize,
+    constants: [*]const ConstantEntry,
 };
 
 pub const QuerySetDescriptor = extern struct {
     next_in_chain: ?*const ChainedStruct = null,
     label: ?[*:0]const u8 = null,
-    query_type: QueryType,
+    type: QueryType,
     count: u32,
 };
 
@@ -734,125 +951,178 @@ pub const RenderBundleDescriptor = extern struct {
 pub const RenderBundleEncoderDescriptor = extern struct {
     next_in_chain: ?*const ChainedStruct = null,
     label: ?[*:0]const u8 = null,
-    color_formats_count: usize,
-    color_formats: ?[*]const TextureFormat,
+    color_format_count: usize,
+    color_formats: [*]const TextureFormat,
     depth_stencil_format: TextureFormat,
     sample_count: u32,
     depth_read_only: Bool,
     stencil_read_only: Bool,
 };
 
+pub const RenderPassColorAttachment = extern struct {
+    next_in_chain: ?*const ChainedStruct = null,
+    view: ?TextureView = null,
+    depth_slice: u32,
+    resolve_target: ?TextureView = null,
+    load_op: LoadOp,
+    store_op: StoreOp,
+    clear_value: Color,
+};
+
 pub const RenderPassDepthStencilAttachment = extern struct {
-    view: *TextureView,
+    view: TextureView,
     depth_load_op: LoadOp,
     depth_store_op: StoreOp,
     depth_clear_value: f32,
-    depth_read_only: Bool = .false,
-    stencil_load_op: LoadOp = .undef,
-    stencil_store_op: StoreOp = .undef,
-    stencil_clear_value: u32 = 0,
-    stencil_read_only: Bool = .false,
+    depth_read_only: Bool,
+    stencil_load_op: LoadOp,
+    stencil_store_op: StoreOp,
+    stencil_clear_value: u32,
+    stencil_read_only: Bool,
 };
 
-// can be chained in RenderPassDescriptor
+pub const RenderPassDescriptor = extern struct {
+    next_in_chain: ?*const ChainedStruct = null,
+    label: ?[*:0]const u8 = null,
+    color_attachment_count: usize,
+    color_attachments: [*]const RenderPassColorAttachment,
+    depth_stencil_attachment: ?*const RenderPassDepthStencilAttachment = null,
+    occlusion_query_set: ?QuerySet = null,
+    timestamp_writes: ?*const RenderPassTimestampWrites = null,
+};
+
 pub const RenderPassDescriptorMaxDrawCount = extern struct {
     chain: ChainedStruct = .{ .s_type = .render_pass_descriptor_max_draw_count },
     max_draw_count: u64,
 };
 
 pub const RenderPassTimestampWrites = extern struct {
-    query_set: *QuerySet,
+    query_set: QuerySet,
     beginning_of_pass_write_index: u32,
     end_of_pass_write_index: u32,
 };
 
-pub const RequestAdapterOptions = extern struct {
+pub const VertexState = extern struct {
     next_in_chain: ?*const ChainedStruct = null,
-    compatible_surface: ?*Surface = null,
-    power_preference: PowerPreference,
-    backend_type: BackendType = .undef,
-    force_fallback_adapter: Bool = .false,
+    module: ShaderModule,
+    entry_point: ?[*:0]const u8 = null,
+    constant_count: usize,
+    constants: [*]const ConstantEntry,
+    buffer_count: usize,
+    buffers: [*]const VertexBufferLayout,
 };
 
-pub const SamplerBindingLayout = extern struct {
+pub const PrimitiveState = extern struct {
     next_in_chain: ?*const ChainedStruct = null,
-    binding_type: SamplerBindingType = .undef,
+    topology: PrimitiveTopology,
+    strip_index_format: IndexFormat,
+    front_face: FrontFace,
+    cull_mode: CullMode,
+};
+
+pub const PrimitiveDepthClipControl = extern struct {
+    chain: ChainedStruct = .{ .s_type = .primitive_depth_clip_control },
+    unclipped_depth: Bool,
+};
+
+pub const DepthStencilState = extern struct {
+    next_in_chain: ?*const ChainedStruct = null,
+    format: TextureFormat,
+    depth_write_enabled: Bool,
+    depth_compare: CompareFunction,
+    stencil_front: StencilFaceState,
+    stencil_back: StencilFaceState,
+    stencil_read_mask: u32,
+    stencil_write_mask: u32,
+    depth_bias: i32,
+    depth_bias_slope_scale: f32,
+    depth_bias_clamp: f32,
+};
+
+pub const MultisampleState = extern struct {
+    next_in_chain: ?*const ChainedStruct = null,
+    count: u32,
+    mask: u32,
+    alpha_to_coverage_enabled: Bool,
+};
+
+pub const FragmentState = extern struct {
+    next_in_chain: ?*const ChainedStruct = null,
+    module: ShaderModule,
+    entry_point: ?[*:0]const u8 = null,
+    constant_count: usize,
+    constants: [*]const ConstantEntry,
+    target_count: usize,
+    targets: [*]const ColorTargetState,
+};
+
+pub const ColorTargetState = extern struct {
+    next_in_chain: ?*const ChainedStruct = null,
+    format: TextureFormat,
+    blend: ?*const BlendState = null,
+    write_mask: ColorWriteMask,
+};
+
+pub const BlendState = extern struct {
+    color: BlendComponent,
+    alpha: BlendComponent,
+};
+
+pub const RenderPipelineDescriptor = extern struct {
+    next_in_chain: ?*const ChainedStruct = null,
+    label: ?[*:0]const u8 = null,
+    layout: ?PipelineLayout = null,
+    vertex: VertexState,
+    primitive: PrimitiveState,
+    depth_stencil: ?*const DepthStencilState = null,
+    multisample: MultisampleState,
+    fragment: ?*const FragmentState = null,
 };
 
 pub const SamplerDescriptor = extern struct {
     next_in_chain: ?*const ChainedStruct = null,
     label: ?[*:0]const u8 = null,
-    address_mode_u: AddressMode = .clamp_to_edge,
-    address_mode_v: AddressMode = .clamp_to_edge,
-    address_mode_w: AddressMode = .clamp_to_edge,
-    mag_filter: FilterMode = .nearest,
-    min_filter: FilterMode = .nearest,
-    mipmap_filter: MipmapFilterMode = .nearest,
-    lod_min_clamp: f32 = 0,
-    lod_max_clamp: f32 = 0,
-    compare: CompareFunction = .undef,
-    max_anisotropy: u16 = 1,
+    address_mode_u: AddressMode,
+    address_mode_v: AddressMode,
+    address_mode_w: AddressMode,
+    mag_filter: FilterMode,
+    min_filter: FilterMode,
+    mipmap_filter: MipmapFilterMode,
+    lod_min_clamp: f32,
+    lod_max_clamp: f32,
+    compare: CompareFunction,
+    max_anisotropy: u16,
+};
+
+pub const ShaderModuleDescriptor = extern struct {
+    next_in_chain: ?*const ChainedStruct = null,
+    label: ?[*:0]const u8 = null,
+    hint_count: usize,
+    hints: [*]const ShaderModuleCompilationHint,
 };
 
 pub const ShaderModuleCompilationHint = extern struct {
     next_in_chain: ?*const ChainedStruct = null,
     entry_point: [*:0]const u8,
-    layout: *PipelineLayout,
+    layout: PipelineLayout,
 };
 
-// can be chained in ShaderModuleDescriptor
-pub const ShaderModuleSPIRVDescriptor = extern struct {
+pub const ShaderModuleSpirvDescriptor = extern struct {
     chain: ChainedStruct = .{ .s_type = .shader_module_spirv_descriptor },
     code_size: u32,
-    code: [*]const u32,
+    code: *const u32,
 };
 
-// can be chained in ShaderModuleDescriptor
-pub const ShaderModuleWGSLDescriptor = extern struct {
+pub const ShaderModuleWgslDescriptor = extern struct {
     chain: ChainedStruct = .{ .s_type = .shader_module_wgsl_descriptor },
     code: [*:0]const u8,
 };
 
 pub const StencilFaceState = extern struct {
-    compare: CompareFunction = .always,
-    fail_op: StencilOperation = .keep,
-    depth_fail_op: StencilOperation = .keep,
-    pass_op: StencilOperation = .keep,
-};
-
-pub const StorageTextureBindingLayout = extern struct {
-    next_in_chain: ?*const ChainedStruct = null,
-    access: StorageTextureAccess = .undef,
-    format: TextureFormat = .undef,
-    view_dimension: TextureViewDimension = .undef,
-};
-
-pub const SurfaceCapabilities = extern struct {
-    next_in_chain: ?*ChainedStructOut,
-    format_count: usize,
-    formats: [*]TextureFormat,
-    present_mode_count: usize,
-    present_modes: [*]PresentMode,
-    alpha_mode_count: usize,
-    alpha_modes: [*]CompositeAlphaMode,
-
-    pub fn freeMembers(self: SurfaceCapabilities) void {
-        wgpuSurfaceCapabilitiesFreeMembers(self);
-    }
-    extern fn wgpuSurfaceCapabilitiesFreeMembers(capabilities: SurfaceCapabilities) void;
-};
-
-pub const SurfaceConfiguration = extern struct {
-    next_in_chain: ?*const ChainedStruct = null,
-    device: *Device,
-    format: TextureFormat,
-    usage: TextureUsageFlags,
-    view_format_count: usize = 0,
-    view_formats: ?[*]const TextureFormat = null,
-    alpha_mode: CompositeAlphaMode,
-    width: u32,
-    height: u32,
-    present_mode: PresentMode,
+    compare: CompareFunction,
+    fail_op: StencilOperation,
+    depth_fail_op: StencilOperation,
+    pass_op: StencilOperation,
 };
 
 pub const SurfaceDescriptor = extern struct {
@@ -860,35 +1130,24 @@ pub const SurfaceDescriptor = extern struct {
     label: ?[*:0]const u8 = null,
 };
 
-// can be chained in SurfaceDescriptor
 pub const SurfaceDescriptorFromAndroidNativeWindow = extern struct {
     chain: ChainedStruct = .{ .s_type = .surface_descriptor_from_android_native_window },
     window: *anyopaque,
 };
 
-// can be chained in SurfaceDescriptor
-pub const SurfaceDescriptorFromCanvasHTMLSelector = extern struct {
+pub const SurfaceDescriptorFromCanvasHtmlSelector = extern struct {
     chain: ChainedStruct = .{ .s_type = .surface_descriptor_from_canvas_html_selector },
     selector: [*:0]const u8,
 };
 
-// can be chained in SurfaceDescriptor
 pub const SurfaceDescriptorFromMetalLayer = extern struct {
     chain: ChainedStruct = .{ .s_type = .surface_descriptor_from_metal_layer },
     layer: *anyopaque,
 };
 
-// can be chained in SurfaceDescriptor
-pub const SurfaceDescriptorFromWaylandSurface = extern struct {
-    chain: ChainedStruct = .{ .s_type = .surface_descriptor_from_wayland_surface },
-    display: *anyopaque,
-    surface: *anyopaque,
-};
-
-// can be chained in SurfaceDescriptor
-pub const SurfaceDescriptorFromWindowsHWND = extern struct {
+pub const SurfaceDescriptorFromWindowsHwnd = extern struct {
     chain: ChainedStruct = .{ .s_type = .surface_descriptor_from_windows_hwnd },
-    h_instance: *anyopaque,
+    hinstance: *anyopaque,
     hwnd: *anyopaque,
 };
 
@@ -904,17 +1163,16 @@ pub const SurfaceDescriptorFromXlibWindow = extern struct {
     window: u64,
 };
 
-pub const SurfaceTexture = extern struct {
-    texture: ?*Texture,
-    suboptimal: Bool,
-    status: SurfaceGetCurrentTextureStatus,
+pub const SurfaceDescriptorFromWaylandSurface = extern struct {
+    chain: ChainedStruct = .{ .s_type = .surface_descriptor_from_wayland_surface },
+    display: *anyopaque,
+    surface: *anyopaque,
 };
 
-pub const TextureBindingLayout = extern struct {
-    next_in_chain: ?*const ChainedStruct = null,
-    sample_type: TextureSampleType = .undef,
-    view_dimension: TextureViewDimension = .undef,
-    multisampled: Bool = .false,
+pub const SurfaceTexture = extern struct {
+    texture: Texture,
+    suboptimal: Bool,
+    status: SurfaceGetCurrentTextureStatus,
 };
 
 pub const TextureDataLayout = extern struct {
@@ -924,1178 +1182,634 @@ pub const TextureDataLayout = extern struct {
     rows_per_image: u32,
 };
 
-pub const TextureViewDescriptor = extern struct {
-    next_in_chain: ?*const ChainedStruct = null,
-    label: ?[*:0]const u8 = null,
-    format: TextureFormat = .undef,
-    dimension: TextureViewDimension = .undef,
-    base_mip_level: u32 = 0,
-    mip_level_count: u32 = 1,
-    base_array_layer: u32 = 0,
-    array_layer_count: u32 = 1,
-    aspect: TextureAspect = .all,
-};
-
-pub const VertexAttribute = extern struct {
-    format: VertexFormat,
-    offset: u64,
-    shader_location: u32,
-};
-
-pub const BindGroupDescriptor = extern struct {
-    next_in_chain: ?*const ChainedStruct = null,
-    label: ?[*:0]const u8 = null,
-    layout: *BindGroupLayout,
-    entry_count: usize,
-    entries: ?[*]const BindGroupEntry,
-};
-
-pub const BindGroupLayoutEntry = extern struct {
-    next_in_chain: ?*const ChainedStruct = null,
-    binding: u32,
-    visibility: ShaderStageFlags,
-    buffer: BufferBindingLayout = .{},
-    sampler: SamplerBindingLayout = .{},
-    texture: TextureBindingLayout = .{},
-    storage_texture: StorageTextureBindingLayout = .{},
-};
-
-pub const BlendState = extern struct {
-    color: BlendComponent,
-    alpha: BlendComponent,
-};
-
-pub const CompilationInfo = extern struct {
-    next_in_chain: ?*const ChainedStruct = null,
-    message_count: usize,
-    messages: ?[*]const CompilationMessage,
-};
-
-pub const ComputePassDescriptor = extern struct {
-    next_in_chain: ?*const ChainedStruct = null,
-    label: ?[*:0]const u8 = null,
-    timestamp_writes: ?*const ComputePassTimestampWrites,
-};
-
-pub const DepthStencilState = extern struct {
-    next_in_chain: ?*const ChainedStruct = null,
-    format: TextureFormat,
-    depth_write_enabled: Bool = .false,
-    depth_compare: CompareFunction,
-    stencil_front: StencilFaceState = .{},
-    stencil_back: StencilFaceState = .{},
-    stencil_read_mask: u32 = 0,
-    stencil_write_mask: u32 = 0,
-    depth_bias: i32 = 0,
-    depth_bias_slope_scale: f32 = 0,
-    depth_bias_clamp: f32 = 0,
-};
-
-pub const ImageCopyBuffer = extern struct {
-    next_in_chain: ?*const ChainedStruct = null,
-    layout: TextureDataLayout,
-    buffer: *Buffer,
-};
-
-pub const ImageCopyTexture = extern struct {
-    next_in_chain: ?*const ChainedStruct = null,
-    texture: *Texture,
-    mip_level: u32,
-    origin: Origin3D,
-    aspect: TextureAspect = .all,
-};
-
-pub const ProgrammableStageDescriptor = extern struct {
-    next_in_chain: ?*const ChainedStruct = null,
-    module: *ShaderModule,
-    entry_point: [*:0]const u8,
-    constant_count: usize = 0,
-    constants: ?[*]const ConstantEntry = null,
-};
-
-pub const RenderPassColorAttachment = extern struct {
-    next_in_chain: ?*const ChainedStruct = null,
-    view: ?*TextureView,
-    resolve_target: ?*TextureView = null,
-    load_op: LoadOp,
-    store_op: StoreOp,
-    clear_value: Color = .{ .r = 0, .g = 0, .b = 0, .a = 1 },
-};
-
-pub const RequiredLimits = extern struct {
-    next_in_chain: ?*const ChainedStruct = null,
-    limits: Limits,
-};
-
-pub const ShaderModuleDescriptor = extern struct {
-    next_in_chain: ?*const ChainedStruct = null,
-    label: ?[*:0]const u8 = null,
-    hint_count: usize = 0,
-    hints: ?[*]const ShaderModuleCompilationHint = null,
-};
-
-pub const SupportedLimits = extern struct {
-    next_in_chain: ?*ChainedStructOut = null,
-    limits: Limits,
-};
-
 pub const TextureDescriptor = extern struct {
     next_in_chain: ?*const ChainedStruct = null,
     label: ?[*:0]const u8 = null,
-    usage: TextureUsageFlags,
-    dimension: TextureDimension = .dim_2d,
-    size: Extent3D,
+    usage: TextureUsage,
+    dimension: TextureDimension,
+    size: Extent_3D,
     format: TextureFormat,
-    mip_level_count: u32 = 1,
-    sample_count: u32 = 1,
-    view_format_count: usize = 0,
-    view_formats: ?[*]const TextureFormat = null,
+    mip_level_count: u32,
+    sample_count: u32,
+    view_format_count: usize,
+    view_formats: [*]const TextureFormat,
 };
 
-pub const VertexBufferLayout = extern struct {
-    array_stride: u64,
-    step_mode: VertexStepMode,
-    attribute_count: usize,
-    attributes: ?[*]const VertexAttribute,
-};
-
-pub const BindGroupLayoutDescriptor = extern struct {
+pub const TextureViewDescriptor = extern struct {
     next_in_chain: ?*const ChainedStruct = null,
     label: ?[*:0]const u8 = null,
-    entry_count: usize,
-    entries: ?[*]const BindGroupLayoutEntry,
-};
-
-pub const ColorTargetState = extern struct {
-    next_in_chain: ?*const ChainedStruct = null,
     format: TextureFormat,
-    blend: ?*const BlendState = null,
-    write_mask: ColorWriteMaskFlags = ColorWriteMaskFlags.all,
+    dimension: TextureViewDimension,
+    base_mip_level: u32,
+    mip_level_count: u32,
+    base_array_layer: u32,
+    array_layer_count: u32,
+    aspect: TextureAspect,
 };
 
-pub const ComputePipelineDescriptor = extern struct {
+pub const UncapturedErrorCallbackInfo = extern struct {
     next_in_chain: ?*const ChainedStruct = null,
-    label: ?[*:0]const u8 = null,
-    layout: ?*PipelineLayout,
-    compute: ProgrammableStageDescriptor,
+    callback: ErrorCallback,
+    userdata: *anyopaque,
 };
 
-pub const DeviceDescriptor = extern struct {
-    next_in_chain: ?*const ChainedStruct = null,
-    label: ?[*:0]const u8 = null,
-    required_features_count: usize = 0,
-    required_features: ?[*]const FeatureName = null,
-    required_limits: ?*const RequiredLimits = null,
-    default_queue: QueueDescriptor = .{},
-    device_lost_callback: ?DeviceLostCallback = null,
-    device_lost_user_data: ?*anyopaque = null,
+extern fn wgpuCreateInstance(descriptor: ?*const InstanceDescriptor) Instance;
+pub const createInstance = wgpuCreateInstance;
+
+pub const Adapter = *opaque {
+    extern fn wgpuAdapterGetLimits(self: Adapter, limits: *SupportedLimits) Bool;
+    pub const getLimits = wgpuAdapterGetLimits;
+
+    extern fn wgpuAdapterHasFeature(self: Adapter, feature: FeatureName) Bool;
+    pub const hasFeature = wgpuAdapterHasFeature;
+
+    extern fn wgpuAdapterEnumerateFeatures(self: Adapter, features: *FeatureName) usize;
+    pub const enumerateFeatures = wgpuAdapterEnumerateFeatures;
+
+    extern fn wgpuAdapterGetInfo(self: Adapter, info: *AdapterInfo) void;
+    pub const getInfo = wgpuAdapterGetInfo;
+
+    pub const RequestDeviceCallback = *const fn (status: RequestDeviceStatus, device: Device, message: [*:0]const u8, userdata: ?*anyopaque) callconv(.C) void;
+    extern fn wgpuAdapterRequestDevice(self: Adapter, descriptor: ?*const DeviceDescriptor, callback: RequestDeviceCallback, userdata: ?*anyopaque) void;
+    pub const requestDevice = wgpuAdapterRequestDevice;
+
+    extern fn wgpuAdapterRelease(self: Adapter) void;
+    pub const release = wgpuAdapterRelease;
+
+    extern fn wgpuAdapterReference(self: Adapter) void;
+    pub const reference = wgpuAdapterReference;
 };
 
-pub const RenderPassDescriptor = extern struct {
-    next_in_chain: ?*const ChainedStruct = null,
-    label: ?[*:0]const u8 = null,
-    color_attachment_count: usize,
-    color_attachments: ?[*]const RenderPassColorAttachment,
-    depth_stencil_attachment: ?*const RenderPassDepthStencilAttachment = null,
-    occlusion_query_set: ?*QuerySet = null,
-    timestamp_writes: ?*const RenderPassTimestampWrites = null,
+pub const BindGroup = *opaque {
+    extern fn wgpuBindGroupSetLabel(self: BindGroup, label: [*:0]const u8) void;
+    pub const setLabel = wgpuBindGroupSetLabel;
+
+    extern fn wgpuBindGroupRelease(self: BindGroup) void;
+    pub const release = wgpuBindGroupRelease;
+
+    extern fn wgpuBindGroupReference(self: BindGroup) void;
+    pub const reference = wgpuBindGroupReference;
 };
 
-pub const VertexState = extern struct {
-    next_in_chain: ?*const ChainedStruct = null,
-    module: *ShaderModule,
-    entry_point: [*:0]const u8,
-    constant_count: usize = 0,
-    constants: ?[*]const ConstantEntry = null,
-    buffer_count: usize,
-    buffers: ?[*]const VertexBufferLayout,
+pub const BindGroupLayout = *opaque {
+    extern fn wgpuBindGroupLayoutSetLabel(self: BindGroupLayout, label: [*:0]const u8) void;
+    pub const setLabel = wgpuBindGroupLayoutSetLabel;
+
+    extern fn wgpuBindGroupLayoutRelease(self: BindGroupLayout) void;
+    pub const release = wgpuBindGroupLayoutRelease;
+
+    extern fn wgpuBindGroupLayoutReference(self: BindGroupLayout) void;
+    pub const reference = wgpuBindGroupLayoutReference;
 };
 
-pub const FragmentState = extern struct {
-    next_in_chain: ?*const ChainedStruct = null,
-    module: *ShaderModule,
-    entry_point: [*:0]const u8,
-    constant_count: usize = 0,
-    constants: ?[*]const ConstantEntry = null,
-    target_count: usize,
-    targets: ?[*]const ColorTargetState,
+pub const Buffer = *opaque {
+    pub const MapAsyncCallback = *const fn (status: BufferMapAsyncStatus, userdata: ?*anyopaque) callconv(.C) void;
+    extern fn wgpuBufferMapAsync(self: Buffer, mode: MapMode, offset: usize, size: usize, callback: MapAsyncCallback, userdata: ?*anyopaque) void;
+    pub const mapAsync = wgpuBufferMapAsync;
+
+    extern fn wgpuBufferGetMappedRange(self: Buffer, offset: usize, size: usize) *anyopaque;
+    pub const getMappedRange = wgpuBufferGetMappedRange;
+
+    extern fn wgpuBufferGetConstMappedRange(self: Buffer, offset: usize, size: usize) *const anyopaque;
+    pub const getConstMappedRange = wgpuBufferGetConstMappedRange;
+
+    extern fn wgpuBufferSetLabel(self: Buffer, label: [*:0]const u8) void;
+    pub const setLabel = wgpuBufferSetLabel;
+
+    extern fn wgpuBufferGetUsage(self: Buffer) BufferUsage;
+    pub const getUsage = wgpuBufferGetUsage;
+
+    extern fn wgpuBufferGetSize(self: Buffer) u64;
+    pub const getSize = wgpuBufferGetSize;
+
+    extern fn wgpuBufferGetMapState(self: Buffer) BufferMapState;
+    pub const getMapState = wgpuBufferGetMapState;
+
+    extern fn wgpuBufferUnmap(self: Buffer) void;
+    pub const unmap = wgpuBufferUnmap;
+
+    extern fn wgpuBufferDestroy(self: Buffer) void;
+    pub const destroy = wgpuBufferDestroy;
+
+    extern fn wgpuBufferRelease(self: Buffer) void;
+    pub const release = wgpuBufferRelease;
+
+    extern fn wgpuBufferReference(self: Buffer) void;
+    pub const reference = wgpuBufferReference;
 };
 
-pub const RenderPipelineDescriptor = extern struct {
-    next_in_chain: ?*const ChainedStruct = null,
-    label: ?[*:0]const u8 = null,
-    layout: ?*PipelineLayout = null,
-    vertex: VertexState,
-    primitive: PrimitiveState = .{},
-    depth_stencil: ?*const DepthStencilState = null,
-    multisample: MultisampleState = .{},
-    fragment: ?*const FragmentState = null,
+pub const CommandBuffer = *opaque {
+    extern fn wgpuCommandBufferSetLabel(self: CommandBuffer, label: [*:0]const u8) void;
+    pub const setLabel = wgpuCommandBufferSetLabel;
+
+    extern fn wgpuCommandBufferRelease(self: CommandBuffer) void;
+    pub const release = wgpuCommandBufferRelease;
+
+    extern fn wgpuCommandBufferReference(self: CommandBuffer) void;
+    pub const reference = wgpuCommandBufferReference;
 };
 
-pub const BufferMapCallback = *const fn (
-    status: BufferMapAsyncStatus,
-    userdata: ?*anyopaque,
-) void;
+pub const CommandEncoder = *opaque {
+    extern fn wgpuCommandEncoderFinish(self: CommandEncoder, descriptor: ?*const CommandBufferDescriptor) CommandBuffer;
+    pub const finish = wgpuCommandEncoderFinish;
 
-pub const CompilationInfoCallback = *const fn (
-    status: CompilationInfoRequestStatus,
-    compilation_info: *const CompilationInfo,
-    userdata: ?*anyopaque,
-) void;
+    extern fn wgpuCommandEncoderBeginComputePass(self: CommandEncoder, descriptor: ?*const ComputePassDescriptor) ComputePassEncoder;
+    pub const beginComputePass = wgpuCommandEncoderBeginComputePass;
 
-pub const CreateComputePipelineAsyncCallback = *const fn (
-    status: CreatePipelineAsyncStatus,
-    pipeline: ?*ComputePipeline,
-    message: ?[*:0]const u8,
-    userdata: ?*anyopaque,
-) void;
+    extern fn wgpuCommandEncoderBeginRenderPass(self: CommandEncoder, descriptor: *const RenderPassDescriptor) RenderPassEncoder;
+    pub const beginRenderPass = wgpuCommandEncoderBeginRenderPass;
 
-pub const CreateRenderPipelineAsyncCallback = *const fn (
-    status: CreatePipelineAsyncStatus,
-    pipeline: ?*RenderPipeline,
-    message: ?[*:0]const u8,
-    userdata: ?*anyopaque,
-) callconv(.C) void;
+    extern fn wgpuCommandEncoderCopyBufferToBuffer(self: CommandEncoder, source: Buffer, source_offset: u64, destination: Buffer, destination_offset: u64, size: u64) void;
+    pub const copyBufferToBuffer = wgpuCommandEncoderCopyBufferToBuffer;
 
-pub const DeviceLostCallback = *const fn (
-    reason: DeviceLostReason,
-    message: ?[*:0]const u8,
-    userdata: ?*anyopaque,
-) callconv(.C) void;
+    extern fn wgpuCommandEncoderCopyBufferToTexture(self: CommandEncoder, source: *const ImageCopyBuffer, destination: *const ImageCopyTexture, copy_size: *const Extent_3D) void;
+    pub const copyBufferToTexture = wgpuCommandEncoderCopyBufferToTexture;
 
-pub const ErrorCallback = *const fn (
-    type: ErrorType,
-    message: ?[*:0]const u8,
-    userdata: ?*anyopaque,
-) callconv(.C) void;
+    extern fn wgpuCommandEncoderCopyTextureToBuffer(self: CommandEncoder, source: *const ImageCopyTexture, destination: *const ImageCopyBuffer, copy_size: *const Extent_3D) void;
+    pub const copyTextureToBuffer = wgpuCommandEncoderCopyTextureToBuffer;
 
-pub const Proc = *const fn () void;
+    extern fn wgpuCommandEncoderCopyTextureToTexture(self: CommandEncoder, source: *const ImageCopyTexture, destination: *const ImageCopyTexture, copy_size: *const Extent_3D) void;
+    pub const copyTextureToTexture = wgpuCommandEncoderCopyTextureToTexture;
 
-pub const QueueWorkDoneCallback = *const fn (
-    status: QueueWorkDoneStatus,
-    userdata: ?*anyopaque,
-) callconv(.C) void;
+    extern fn wgpuCommandEncoderClearBuffer(self: CommandEncoder, buffer: Buffer, offset: u64, size: u64) void;
+    pub const clearBuffer = wgpuCommandEncoderClearBuffer;
 
-pub const RequestAdapterCallback = *const fn (
-    status: RequestAdapterStatus,
-    adapter: *Adapter,
-    message: ?[*:0]const u8,
-    userdata: ?*anyopaque,
-) callconv(.C) void;
+    extern fn wgpuCommandEncoderInsertDebugMarker(self: CommandEncoder, marker_label: [*:0]const u8) void;
+    pub const insertDebugMarker = wgpuCommandEncoderInsertDebugMarker;
 
-pub const RequestDeviceCallback = *const fn (
-    status: RequestDeviceStatus,
-    device: *Device,
-    message: ?[*:0]const u8,
-    userdata: ?*anyopaque,
-) callconv(.C) void;
+    extern fn wgpuCommandEncoderPopDebugGroup(self: CommandEncoder) void;
+    pub const popDebugGroup = wgpuCommandEncoderPopDebugGroup;
 
-pub const Adapter = opaque {
-    const RequestDeviceData = struct {
-        device: *Device = undefined,
-        status: RequestDeviceStatus = .unknown,
-        message: ?[*:0]const u8 = null,
-    };
+    extern fn wgpuCommandEncoderPushDebugGroup(self: CommandEncoder, group_label: [*:0]const u8) void;
+    pub const pushDebugGroup = wgpuCommandEncoderPushDebugGroup;
 
-    fn handleRequestDevice(
-        status: RequestDeviceStatus,
-        device: *Device,
-        message: ?[*:0]const u8,
-        userdata: ?*anyopaque,
-    ) callconv(.C) void {
-        const data: *RequestDeviceData = @ptrCast(@alignCast(userdata.?));
-        data.* = .{
-            .device = device,
-            .status = status,
-            .message = message,
-        };
-    }
+    extern fn wgpuCommandEncoderResolveQuerySet(self: CommandEncoder, query_set: QuerySet, first_query: u32, query_count: u32, destination: Buffer, destination_offset: u64) void;
+    pub const resolveQuerySet = wgpuCommandEncoderResolveQuerySet;
 
-    pub fn requestDevice(
-        self: *Adapter,
-        descriptor: DeviceDescriptor,
-    ) !*Device {
-        var data = RequestDeviceData{};
-        wgpuAdapterRequestDevice(
-            self,
-            &descriptor,
-            handleRequestDevice,
-            @ptrCast(&data),
-        );
+    extern fn wgpuCommandEncoderWriteTimestamp(self: CommandEncoder, query_set: QuerySet, query_index: u32) void;
+    pub const writeTimestamp = wgpuCommandEncoderWriteTimestamp;
 
-        if (data.status == .success) {
-            return data.device;
-        } else {
-            log.err(
-                "Device request failed. status: {s} message: {s}",
-                .{ @tagName(data.status), data.message.? },
-            );
-            return error.WGPUDeviceRequestFailed;
-        }
-    }
+    extern fn wgpuCommandEncoderSetLabel(self: CommandEncoder, label: [*:0]const u8) void;
+    pub const setLabel = wgpuCommandEncoderSetLabel;
 
-    pub fn release(self: *Adapter) void {
-        wgpuAdapterRelease(self);
-    }
+    extern fn wgpuCommandEncoderRelease(self: CommandEncoder) void;
+    pub const release = wgpuCommandEncoderRelease;
 
-    extern fn wgpuAdapterEnumerateFeatures(adapter: *Adapter, features: ?[*]FeatureName) usize;
-    extern fn wgpuAdapterGetLimits(adapter: *Adapter, limits: *SupportedLimits) Bool;
-    extern fn wgpuAdapterGetProperties(adapter: *Adapter, properties: *AdapterProperties) void;
-    extern fn wgpuAdapterHasFeature(adapter: *Adapter, feature: FeatureName) Bool;
-    extern fn wgpuAdapterRequestDevice(adapter: *Adapter, descriptor: *const DeviceDescriptor, callback: RequestDeviceCallback, userdata: ?*anyopaque) void;
-    extern fn wgpuAdapterReference(adapter: *Adapter) void;
-    extern fn wgpuAdapterRelease(adapter: *Adapter) void;
+    extern fn wgpuCommandEncoderReference(self: CommandEncoder) void;
+    pub const reference = wgpuCommandEncoderReference;
 };
 
-pub const BindGroup = opaque {
-    pub fn release(self: *BindGroup) void {
-        wgpuBindGroupRelease(self);
+pub const ComputePassEncoder = *opaque {
+    extern fn wgpuComputePassEncoderInsertDebugMarker(self: ComputePassEncoder, marker_label: [*:0]const u8) void;
+    pub const insertDebugMarker = wgpuComputePassEncoderInsertDebugMarker;
+
+    extern fn wgpuComputePassEncoderPopDebugGroup(self: ComputePassEncoder) void;
+    pub const popDebugGroup = wgpuComputePassEncoderPopDebugGroup;
+
+    extern fn wgpuComputePassEncoderPushDebugGroup(self: ComputePassEncoder, group_label: [*:0]const u8) void;
+    pub const pushDebugGroup = wgpuComputePassEncoderPushDebugGroup;
+
+    extern fn wgpuComputePassEncoderSetPipeline(self: ComputePassEncoder, pipeline: ComputePipeline) void;
+    pub const setPipeline = wgpuComputePassEncoderSetPipeline;
+
+    extern fn wgpuComputePassEncoderSetBindGroup(self: ComputePassEncoder, group_index: u32, group: ?BindGroup, dynamic_offset_count: usize, dynamic_offsets: [*]const u32) void;
+    pub inline fn setBindGroup(self: ComputePassEncoder, group_index: u32, group: ?BindGroup, dynamic_offsets: []const u32) void {
+        return wgpuComputePassEncoderSetBindGroup(self, group_index, group, dynamic_offsets.len, dynamic_offsets.ptr);
     }
 
-    extern fn wgpuBindGroupSetLabel(bind_group: *BindGroup, label: [*:0]const u8) void;
-    extern fn wgpuBindGroupReference(bind_group: *BindGroup) void;
-    extern fn wgpuBindGroupRelease(bind_group: *BindGroup) void;
+    extern fn wgpuComputePassEncoderDispatchWorkgroups(self: ComputePassEncoder, workgroup_count_x: u32, workgroup_count_y: u32, workgroup_count_z: u32) void;
+    pub const dispatchWorkgroups = wgpuComputePassEncoderDispatchWorkgroups;
+
+    extern fn wgpuComputePassEncoderDispatchWorkgroupsIndirect(self: ComputePassEncoder, indirect_buffer: Buffer, indirect_offset: u64) void;
+    pub const dispatchWorkgroupsIndirect = wgpuComputePassEncoderDispatchWorkgroupsIndirect;
+
+    extern fn wgpuComputePassEncoderEnd(self: ComputePassEncoder) void;
+    pub const end = wgpuComputePassEncoderEnd;
+
+    extern fn wgpuComputePassEncoderSetLabel(self: ComputePassEncoder, label: [*:0]const u8) void;
+    pub const setLabel = wgpuComputePassEncoderSetLabel;
+
+    extern fn wgpuComputePassEncoderRelease(self: ComputePassEncoder) void;
+    pub const release = wgpuComputePassEncoderRelease;
+
+    extern fn wgpuComputePassEncoderReference(self: ComputePassEncoder) void;
+    pub const reference = wgpuComputePassEncoderReference;
 };
 
-pub const BindGroupLayout = opaque {
-    pub fn release(self: *BindGroupLayout) void {
-        wgpuBindGroupLayoutRelease(self);
-    }
+pub const ComputePipeline = *opaque {
+    extern fn wgpuComputePipelineGetBindGroupLayout(self: ComputePipeline, group_index: u32) BindGroupLayout;
+    pub const getBindGroupLayout = wgpuComputePipelineGetBindGroupLayout;
 
-    extern fn wgpuBindGroupLayoutSetLabel(bind_group_layout: *BindGroupLayout, label: [*:0]const u8) void;
-    extern fn wgpuBindGroupLayoutReference(bind_group_layout: *BindGroupLayout) void;
-    extern fn wgpuBindGroupLayoutRelease(bind_group_layout: *BindGroupLayout) void;
+    extern fn wgpuComputePipelineSetLabel(self: ComputePipeline, label: [*:0]const u8) void;
+    pub const setLabel = wgpuComputePipelineSetLabel;
+
+    extern fn wgpuComputePipelineRelease(self: ComputePipeline) void;
+    pub const release = wgpuComputePipelineRelease;
+
+    extern fn wgpuComputePipelineReference(self: ComputePipeline) void;
+    pub const reference = wgpuComputePipelineReference;
 };
 
-pub const Buffer = opaque {
-    pub fn mapAsync(self: *Buffer, mode: MapModeFlags, offset: usize, size: usize, callback: BufferMapCallback, userdata: ?*anyopaque) void {
-        wgpuBufferMapAsync(self, mode, offset, size, callback, userdata);
-    }
+pub const Device = *opaque {
+    extern fn wgpuDeviceCreateBindGroup(self: Device, descriptor: *const BindGroupDescriptor) BindGroup;
+    pub const createBindGroup = wgpuDeviceCreateBindGroup;
 
-    pub fn unmap(self: *Buffer) void {
-        wgpuBufferUnmap(self);
-    }
+    extern fn wgpuDeviceCreateBindGroupLayout(self: Device, descriptor: *const BindGroupLayoutDescriptor) BindGroupLayout;
+    pub const createBindGroupLayout = wgpuDeviceCreateBindGroupLayout;
 
-    pub fn getConstMappedRange(self: *Buffer, offset: usize, size: usize) ?*const anyopaque {
-        return wgpuBufferGetConstMappedRange(self, offset, size);
-    }
+    extern fn wgpuDeviceCreateBuffer(self: Device, descriptor: *const BufferDescriptor) Buffer;
+    pub const createBuffer = wgpuDeviceCreateBuffer;
 
-    pub fn getMappedRange(self: *Buffer, offset: usize, size: usize) ?*anyopaque {
-        return wgpuBufferGetMappedRange(self, offset, size);
-    }
+    extern fn wgpuDeviceCreateCommandEncoder(self: Device, descriptor: ?*const CommandEncoderDescriptor) CommandEncoder;
+    pub const createCommandEncoder = wgpuDeviceCreateCommandEncoder;
 
-    pub fn getMapState(self: *Buffer) BufferMapState {
-        return wgpuBufferGetMapState(self);
-    }
+    extern fn wgpuDeviceCreateComputePipeline(self: Device, descriptor: *const ComputePipelineDescriptor) ComputePipeline;
+    pub const createComputePipeline = wgpuDeviceCreateComputePipeline;
 
-    pub fn getSize(self: *Buffer) u64 {
-        return wgpuBufferGetSize(self);
-    }
+    pub const CreateComputePipelineAsyncCallback = *const fn (status: CreatePipelineAsyncStatus, pipeline: ComputePipeline, message: [*:0]const u8, userdata: ?*anyopaque) callconv(.C) void;
+    extern fn wgpuDeviceCreateComputePipelineAsync(self: Device, descriptor: *const ComputePipelineDescriptor, callback: CreateComputePipelineAsyncCallback, userdata: ?*anyopaque) void;
+    pub const createComputePipelineAsync = wgpuDeviceCreateComputePipelineAsync;
 
-    pub fn release(self: *Buffer) void {
-        wgpuBufferRelease(self);
-    }
+    extern fn wgpuDeviceCreatePipelineLayout(self: Device, descriptor: *const PipelineLayoutDescriptor) PipelineLayout;
+    pub const createPipelineLayout = wgpuDeviceCreatePipelineLayout;
 
-    extern fn wgpuBufferMapAsync(buffer: *Buffer, mode: MapModeFlags, offset: usize, size: usize, callback: BufferMapCallback, userdata: ?*anyopaque) void;
-    extern fn wgpuBufferUnmap(buffer: *Buffer) void;
-    extern fn wgpuBufferGetConstMappedRange(buffer: *Buffer, offset: usize, size: usize) ?*const anyopaque;
-    extern fn wgpuBufferGetMappedRange(buffer: *Buffer, offset: usize, size: usize) ?*anyopaque;
-    extern fn wgpuBufferGetMapState(buffer: *Buffer) BufferMapState;
-    extern fn wgpuBufferDestroy(buffer: *Buffer) void;
-    extern fn wgpuBufferGetSize(buffer: *Buffer) u64;
-    extern fn wgpuBufferGetUsage(buffer: *Buffer) BufferUsageFlags;
-    extern fn wgpuBufferSetLabel(buffer: *Buffer, label: [*:0]const u8) void;
-    extern fn wgpuBufferReference(buffer: *Buffer) void;
-    extern fn wgpuBufferRelease(buffer: *Buffer) void;
+    extern fn wgpuDeviceCreateQuerySet(self: Device, descriptor: *const QuerySetDescriptor) QuerySet;
+    pub const createQuerySet = wgpuDeviceCreateQuerySet;
+
+    pub const CreateRenderPipelineAsyncCallback = *const fn (status: CreatePipelineAsyncStatus, pipeline: RenderPipeline, message: [*:0]const u8, userdata: ?*anyopaque) callconv(.C) void;
+    extern fn wgpuDeviceCreateRenderPipelineAsync(self: Device, descriptor: *const RenderPipelineDescriptor, callback: CreateRenderPipelineAsyncCallback, userdata: ?*anyopaque) void;
+    pub const createRenderPipelineAsync = wgpuDeviceCreateRenderPipelineAsync;
+
+    extern fn wgpuDeviceCreateRenderBundleEncoder(self: Device, descriptor: *const RenderBundleEncoderDescriptor) RenderBundleEncoder;
+    pub const createRenderBundleEncoder = wgpuDeviceCreateRenderBundleEncoder;
+
+    extern fn wgpuDeviceCreateRenderPipeline(self: Device, descriptor: *const RenderPipelineDescriptor) RenderPipeline;
+    pub const createRenderPipeline = wgpuDeviceCreateRenderPipeline;
+
+    extern fn wgpuDeviceCreateSampler(self: Device, descriptor: ?*const SamplerDescriptor) Sampler;
+    pub const createSampler = wgpuDeviceCreateSampler;
+
+    extern fn wgpuDeviceCreateShaderModule(self: Device, descriptor: *const ShaderModuleDescriptor) ShaderModule;
+    pub const createShaderModule = wgpuDeviceCreateShaderModule;
+
+    extern fn wgpuDeviceCreateTexture(self: Device, descriptor: *const TextureDescriptor) Texture;
+    pub const createTexture = wgpuDeviceCreateTexture;
+
+    extern fn wgpuDeviceDestroy(self: Device) void;
+    pub const destroy = wgpuDeviceDestroy;
+
+    extern fn wgpuDeviceGetLimits(self: Device, limits: *SupportedLimits) Bool;
+    pub const getLimits = wgpuDeviceGetLimits;
+
+    extern fn wgpuDeviceHasFeature(self: Device, feature: FeatureName) Bool;
+    pub const hasFeature = wgpuDeviceHasFeature;
+
+    extern fn wgpuDeviceEnumerateFeatures(self: Device, features: *FeatureName) usize;
+    pub const enumerateFeatures = wgpuDeviceEnumerateFeatures;
+
+    extern fn wgpuDeviceGetQueue(self: Device) Queue;
+    pub const getQueue = wgpuDeviceGetQueue;
+
+    extern fn wgpuDevicePushErrorScope(self: Device, filter: ErrorFilter) void;
+    pub const pushErrorScope = wgpuDevicePushErrorScope;
+
+    extern fn wgpuDevicePopErrorScope(self: Device, callback: ErrorCallback, userdata: *anyopaque) void;
+    pub const popErrorScope = wgpuDevicePopErrorScope;
+
+    extern fn wgpuDeviceSetLabel(self: Device, label: [*:0]const u8) void;
+    pub const setLabel = wgpuDeviceSetLabel;
+
+    extern fn wgpuDeviceRelease(self: Device) void;
+    pub const release = wgpuDeviceRelease;
+
+    extern fn wgpuDeviceReference(self: Device) void;
+    pub const reference = wgpuDeviceReference;
 };
 
-pub const CommandBuffer = opaque {
-    pub fn release(self: *CommandBuffer) void {
-        wgpuCommandBufferRelease(self);
-    }
+pub const Instance = *opaque {
+    extern fn wgpuInstanceCreateSurface(self: Instance, descriptor: *const SurfaceDescriptor) Surface;
+    pub const createSurface = wgpuInstanceCreateSurface;
 
-    extern fn wgpuCommandBufferSetLabel(command_buffer: *CommandBuffer, label: [*:0]const u8) void;
-    extern fn wgpuCommandBufferReference(command_buffer: *CommandBuffer) void;
-    extern fn wgpuCommandBufferRelease(command_buffer: *CommandBuffer) void;
+    extern fn wgpuInstanceHasWgslLanguageFeature(self: Instance, feature: WgslFeatureName) Bool;
+    pub const hasWgslLanguageFeature = wgpuInstanceHasWgslLanguageFeature;
+
+    extern fn wgpuInstanceProcessEvents(self: Instance) void;
+    pub const processEvents = wgpuInstanceProcessEvents;
+
+    pub const RequestAdapterCallback = *const fn (status: RequestAdapterStatus, adapter: Adapter, message: [*:0]const u8, userdata: ?*anyopaque) callconv(.C) void;
+    extern fn wgpuInstanceRequestAdapter(self: Instance, options: ?*const RequestAdapterOptions, callback: RequestAdapterCallback, userdata: ?*anyopaque) void;
+    pub const requestAdapter = wgpuInstanceRequestAdapter;
+
+    extern fn wgpuInstanceRelease(self: Instance) void;
+    pub const release = wgpuInstanceRelease;
+
+    extern fn wgpuInstanceReference(self: Instance) void;
+    pub const reference = wgpuInstanceReference;
 };
 
-pub const CommandEncoder = opaque {
-    pub fn beginComputePass(self: *CommandEncoder, descriptor: ComputePassDescriptor) *ComputePassEncoder {
-        return wgpuCommandEncoderBeginComputePass(self, &descriptor);
-    }
+pub const PipelineLayout = *opaque {
+    extern fn wgpuPipelineLayoutSetLabel(self: PipelineLayout, label: [*:0]const u8) void;
+    pub const setLabel = wgpuPipelineLayoutSetLabel;
 
-    pub fn beginRenderPass(self: *CommandEncoder, descriptor: RenderPassDescriptor) *RenderPassEncoder {
-        return wgpuCommandEncoderBeginRenderPass(self, &descriptor);
-    }
+    extern fn wgpuPipelineLayoutRelease(self: PipelineLayout) void;
+    pub const release = wgpuPipelineLayoutRelease;
 
-    pub fn clearBuffer(self: *CommandEncoder, buffer: *Buffer, offset: u64, size: u64) void {
-        wgpuCommandEncoderClearBuffer(self, buffer, offset, size);
-    }
-
-    pub fn copyBufferToBuffer(self: *CommandEncoder, source: *Buffer, source_offset: u64, destination: *Buffer, destination_offset: u64, size: u64) void {
-        wgpuCommandEncoderCopyBufferToBuffer(self, source, source_offset, destination, destination_offset, size);
-    }
-
-    pub fn copyBufferToTexture(self: *CommandEncoder, source: ImageCopyBuffer, destination: ImageCopyTexture, copy_size: Extent3D) void {
-        wgpuCommandEncoderCopyBufferToTexture(self, &source, &destination, &copy_size);
-    }
-
-    pub fn copyTextureToBuffer(self: *CommandEncoder, source: ImageCopyTexture, destination: ImageCopyBuffer, copy_size: Extent3D) void {
-        wgpuCommandEncoderCopyTextureToBuffer(self, &source, &destination, &copy_size);
-    }
-
-    pub fn copyTextureToTexture(self: *CommandEncoder, source: ImageCopyTexture, destination: ImageCopyTexture, copy_size: Extent3D) void {
-        wgpuCommandEncoderCopyTextureToTexture(self, &source, &destination, &copy_size);
-    }
-
-    pub fn resolveQuerySet(self: *CommandEncoder, query_set: *QuerySet, first_query: u32, query_count: u32, destination: *Buffer, destination_offset: u64) void {
-        wgpuCommandEncoderResolveQuerySet(self, query_set, first_query, query_count, destination, destination_offset);
-    }
-
-    pub fn writeTimestamp(self: *CommandEncoder, query_set: *QuerySet, query_index: u32) void {
-        wgpuCommandEncoderWriteTimestamp(self, query_set, query_index);
-    }
-
-    pub fn finish(self: *CommandEncoder, descriptor: CommandBufferDescriptor) *CommandBuffer {
-        return wgpuCommandEncoderFinish(self, &descriptor);
-    }
-
-    pub fn release(self: *CommandEncoder) void {
-        wgpuCommandEncoderRelease(self);
-    }
-
-    extern fn wgpuCommandEncoderBeginComputePass(command_encoder: *CommandEncoder, descriptor: *const ComputePassDescriptor) *ComputePassEncoder;
-    extern fn wgpuCommandEncoderBeginRenderPass(command_encoder: *CommandEncoder, descriptor: *const RenderPassDescriptor) *RenderPassEncoder;
-    extern fn wgpuCommandEncoderClearBuffer(command_encoder: *CommandEncoder, buffer: *Buffer, offset: u64, size: u64) void;
-    extern fn wgpuCommandEncoderCopyBufferToBuffer(command_encoder: *CommandEncoder, source: *Buffer, source_offset: u64, destination: *Buffer, destination_offset: u64, size: u64) void;
-    extern fn wgpuCommandEncoderCopyBufferToTexture(command_encoder: *CommandEncoder, source: *const ImageCopyBuffer, destination: *const ImageCopyTexture, copy_size: *const Extent3D) void;
-    extern fn wgpuCommandEncoderCopyTextureToBuffer(command_encoder: *CommandEncoder, source: *const ImageCopyTexture, destination: *const ImageCopyBuffer, copy_size: *const Extent3D) void;
-    extern fn wgpuCommandEncoderCopyTextureToTexture(command_encoder: *CommandEncoder, source: *const ImageCopyTexture, destination: *const ImageCopyTexture, copy_size: *const Extent3D) void;
-    extern fn wgpuCommandEncoderResolveQuerySet(command_encoder: *CommandEncoder, query_set: *QuerySet, first_query: u32, query_count: u32, destination: *Buffer, destination_offset: u64) void;
-    extern fn wgpuCommandEncoderWriteTimestamp(command_encoder: *CommandEncoder, query_set: *QuerySet, query_index: u32) void;
-    extern fn wgpuCommandEncoderFinish(command_encoder: *CommandEncoder, descriptor: *const CommandBufferDescriptor) *CommandBuffer;
-
-    extern fn wgpuCommandEncoderInsertDebugMarker(command_encoder: *CommandEncoder, marker_label: [*:0]const u8) void;
-    extern fn wgpuCommandEncoderPopDebugGroup(command_encoder: *CommandEncoder) void;
-    extern fn wgpuCommandEncoderPushDebugGroup(command_encoder: *CommandEncoder, group_label: [*:0]const u8) void;
-    extern fn wgpuCommandEncoderSetLabel(command_encoder: *CommandEncoder, label: [*:0]const u8) void;
-    extern fn wgpuCommandEncoderReference(command_encoder: *CommandEncoder) void;
-    extern fn wgpuCommandEncoderRelease(command_encoder: *CommandEncoder) void;
+    extern fn wgpuPipelineLayoutReference(self: PipelineLayout) void;
+    pub const reference = wgpuPipelineLayoutReference;
 };
 
-pub const ComputePassEncoder = opaque {
-    pub fn dispatchWorkgroups(self: *ComputePassEncoder, workgroup_count_x: u32, workgroup_count_y: u32, workgroup_count_z: u32) void {
-        wgpuComputePassEncoderDispatchWorkgroups(self, workgroup_count_x, workgroup_count_y, workgroup_count_z);
-    }
+pub const QuerySet = *opaque {
+    extern fn wgpuQuerySetSetLabel(self: QuerySet, label: [*:0]const u8) void;
+    pub const setLabel = wgpuQuerySetSetLabel;
 
-    pub fn dispatchWorkgroupsIndirect(self: *ComputePassEncoder, indirect_buffer: *Buffer, indirect_offset: u64) void {
-        wgpuComputePassEncoderDispatchWorkgroupsIndirect(self, indirect_buffer, indirect_offset);
-    }
+    extern fn wgpuQuerySetGetType(self: QuerySet) QueryType;
+    pub const getType = wgpuQuerySetGetType;
 
-    pub fn setBindGroup(self: *ComputePassEncoder, group_index: u32, group: *BindGroup, dynamic_offsets: []const u32) void {
-        wgpuComputePassEncoderSetBindGroup(self, group_index, group, dynamic_offsets.len, dynamic_offsets.ptr);
-    }
-    pub fn setPipeline(self: *ComputePassEncoder, pipeline: *ComputePipeline) void {
-        wgpuComputePassEncoderSetPipeline(self, pipeline);
-    }
+    extern fn wgpuQuerySetGetCount(self: QuerySet) u32;
+    pub const getCount = wgpuQuerySetGetCount;
 
-    pub fn encoderEnd(self: *ComputePassEncoder) void {
-        wgpuComputePassEncoderEnd(self);
-    }
+    extern fn wgpuQuerySetDestroy(self: QuerySet) void;
+    pub const destroy = wgpuQuerySetDestroy;
 
-    pub fn release(self: *ComputePassEncoder) void {
-        wgpuComputePassEncoderRelease(self);
-    }
+    extern fn wgpuQuerySetRelease(self: QuerySet) void;
+    pub const release = wgpuQuerySetRelease;
 
-    extern fn wgpuComputePassEncoderDispatchWorkgroups(compute_pass_encoder: *ComputePassEncoder, workgroup_count_x: u32, workgroup_count_y: u32, workgroup_count_z: u32) void;
-    extern fn wgpuComputePassEncoderDispatchWorkgroupsIndirect(compute_pass_encoder: *ComputePassEncoder, indirect_buffer: *Buffer, indirect_offset: u64) void;
-    extern fn wgpuComputePassEncoderSetBindGroup(compute_pass_encoder: *ComputePassEncoder, group_index: u32, group: *BindGroup, dynamic_offset_count: usize, dynamic_offsets: [*]const u32) void;
-    extern fn wgpuComputePassEncoderSetPipeline(compute_pass_encoder: *ComputePassEncoder, pipeline: *ComputePipeline) void;
-    extern fn wgpuComputePassEncoderEnd(compute_pass_encoder: *ComputePassEncoder) void;
-
-    extern fn wgpuComputePassEncoderInsertDebugMarker(compute_pass_encoder: *ComputePassEncoder, marker_label: [*:0]const u8) void;
-    extern fn wgpuComputePassEncoderPopDebugGroup(compute_pass_encoder: *ComputePassEncoder) void;
-    extern fn wgpuComputePassEncoderPushDebugGroup(compute_pass_encoder: *ComputePassEncoder, group_label: [*:0]const u8) void;
-    extern fn wgpuComputePassEncoderSetLabel(compute_pass_encoder: *ComputePassEncoder, label: [*:0]const u8) void;
-    extern fn wgpuComputePassEncoderReference(compute_pass_encoder: *ComputePassEncoder) void;
-    extern fn wgpuComputePassEncoderRelease(compute_pass_encoder: *ComputePassEncoder) void;
+    extern fn wgpuQuerySetReference(self: QuerySet) void;
+    pub const reference = wgpuQuerySetReference;
 };
 
-pub const ComputePipeline = opaque {
-    pub fn getBindGroupLayout(self: *ComputePipeline, group_index: u32) *BindGroupLayout {
-        return wgpuComputePipelineGetBindGroupLayout(self, group_index);
+pub const Queue = *opaque {
+    extern fn wgpuQueueSubmit(self: Queue, command_count: usize, commands: [*]const CommandBuffer) void;
+    pub inline fn submit(self: Queue, commands: []const CommandBuffer) void {
+        return wgpuQueueSubmit(self, commands.len, commands.ptr);
     }
 
-    pub fn release(self: *ComputePipeline) void {
-        wgpuComputePipelineRelease(self);
-    }
+    pub const OnSubmittedWorkDoneCallback = *const fn (status: QueueWorkDoneStatus, userdata: ?*anyopaque) callconv(.C) void;
+    extern fn wgpuQueueOnSubmittedWorkDone(self: Queue, callback: OnSubmittedWorkDoneCallback, userdata: ?*anyopaque) void;
+    pub const onSubmittedWorkDone = wgpuQueueOnSubmittedWorkDone;
 
-    extern fn wgpuComputePipelineGetBindGroupLayout(compute_pipeline: *ComputePipeline, group_index: u32) *BindGroupLayout;
-    extern fn wgpuComputePipelineSetLabel(compute_pipeline: *ComputePipeline, label: [*:0]const u8) void;
-    extern fn wgpuComputePipelineReference(compute_pipeline: *ComputePipeline) void;
-    extern fn wgpuComputePipelineRelease(compute_pipeline: *ComputePipeline) void;
+    extern fn wgpuQueueWriteBuffer(self: Queue, buffer: Buffer, buffer_offset: u64, data: *const anyopaque, size: usize) void;
+    pub const writeBuffer = wgpuQueueWriteBuffer;
+
+    extern fn wgpuQueueWriteTexture(self: Queue, destination: *const ImageCopyTexture, data: *const anyopaque, data_size: usize, data_layout: *const TextureDataLayout, write_size: *const Extent_3D) void;
+    pub const writeTexture = wgpuQueueWriteTexture;
+
+    extern fn wgpuQueueSetLabel(self: Queue, label: [*:0]const u8) void;
+    pub const setLabel = wgpuQueueSetLabel;
+
+    extern fn wgpuQueueRelease(self: Queue) void;
+    pub const release = wgpuQueueRelease;
+
+    extern fn wgpuQueueReference(self: Queue) void;
+    pub const reference = wgpuQueueReference;
 };
 
-pub const Device = opaque {
-    pub fn createBindGroup(self: *Device, descriptor: BindGroupDescriptor) *BindGroup {
-        return wgpuDeviceCreateBindGroup(self, &descriptor);
-    }
+pub const RenderBundle = *opaque {
+    extern fn wgpuRenderBundleSetLabel(self: RenderBundle, label: [*:0]const u8) void;
+    pub const setLabel = wgpuRenderBundleSetLabel;
 
-    pub fn createBindGroupLayout(self: *Device, descriptor: BindGroupLayoutDescriptor) *BindGroupLayout {
-        return wgpuDeviceCreateBindGroupLayout(self, &descriptor);
-    }
+    extern fn wgpuRenderBundleRelease(self: RenderBundle) void;
+    pub const release = wgpuRenderBundleRelease;
 
-    pub fn createBuffer(self: *Device, descriptor: BufferDescriptor) *Buffer {
-        return wgpuDeviceCreateBuffer(self, &descriptor);
-    }
-
-    pub fn createCommandEncoder(self: *Device, descriptor: CommandEncoderDescriptor) *CommandEncoder {
-        return wgpuDeviceCreateCommandEncoder(self, &descriptor);
-    }
-
-    pub fn createComputePipeline(self: *Device, descriptor: ComputePipelineDescriptor) *ComputePipeline {
-        return wgpuDeviceCreateComputePipeline(self, &descriptor);
-    }
-
-    pub fn createPipelineLayout(self: *Device, descriptor: PipelineLayoutDescriptor) *PipelineLayout {
-        return wgpuDeviceCreatePipelineLayout(self, &descriptor);
-    }
-
-    pub fn createQuerySet(self: *Device, descriptor: QuerySetDescriptor) *QuerySet {
-        return wgpuDeviceCreateQuerySet(self, &descriptor);
-    }
-
-    pub fn createRenderBundleEncoder(self: *Device, descriptor: RenderBundleEncoderDescriptor) *RenderBundleEncoder {
-        return wgpuDeviceCreateRenderBundleEncoder(self, &descriptor);
-    }
-
-    pub fn createRenderPipeline(self: *Device, descriptor: RenderPipelineDescriptor) *RenderPipeline {
-        return wgpuDeviceCreateRenderPipeline(self, &descriptor);
-    }
-
-    pub fn createSampler(self: *Device, descriptor: SamplerDescriptor) *Sampler {
-        return wgpuDeviceCreateSampler(self, &descriptor);
-    }
-
-    pub fn createShaderModule(self: *Device, descriptor: ShaderModuleDescriptor) *ShaderModule {
-        return wgpuDeviceCreateShaderModule(self, &descriptor);
-    }
-
-    pub fn createTexture(self: *Device, descriptor: TextureDescriptor) *Texture {
-        return wgpuDeviceCreateTexture(self, &descriptor);
-    }
-
-    pub fn getQueue(self: *Device) *Queue {
-        return wgpuDeviceGetQueue(self);
-    }
-
-    pub fn getFeatures(self: *Device, allocator: std.mem.Allocator) ![]FeatureName {
-        const size = wgpuDeviceEnumerateFeatures(self, null);
-        const features = try allocator.alloc(FeatureName, size);
-        _ = wgpuDeviceEnumerateFeatures(self, features.ptr);
-        return features;
-    }
-
-    pub fn getLimits(self: *Device, limits: *SupportedLimits) bool {
-        return switch (wgpuDeviceGetLimits(self, limits)) {
-            .true => true,
-            .false => false,
-        };
-    }
-
-    pub fn hasFeature(self: *Device, feature: FeatureName) bool {
-        return switch (wgpuDeviceHasFeature(self, feature)) {
-            .true => true,
-            .false => false,
-        };
-    }
-
-    pub fn pushErrorScope(self: *Device, filter: ErrorFilter) void {
-        wgpuDevicePushErrorScope(self, filter);
-    }
-
-    pub fn popErrorScope(self: *Device, callback: ErrorCallback, userdata: ?*anyopaque) void {
-        wgpuDevicePopErrorScope(self, callback, userdata);
-    }
-
-    pub fn setUncapturedErrorCallback(self: *Device, callback: ErrorCallback, userdata: ?*anyopaque) void {
-        wgpuDeviceSetUncapturedErrorCallback(self, callback, userdata);
-    }
-
-    pub fn release(self: *Device) void {
-        wgpuDeviceRelease(self);
-    }
-
-    //WGPU-Native stuff
-    pub fn poll(self: *Device, wait: bool, wrapped_submission_index: WrappedSubmissionIndex) bool {
-        const wait_bool = if (wait) Bool.true else Bool.false;
-        switch (wgpuDevicePoll(self, wait_bool, &wrapped_submission_index)) {
-            .true => return true,
-            .false => return false,
-        }
-    }
-
-    extern fn wgpuDeviceCreateBindGroup(device: *Device, descriptor: *const BindGroupDescriptor) *BindGroup;
-    extern fn wgpuDeviceCreateBindGroupLayout(device: *Device, descriptor: *const BindGroupLayoutDescriptor) *BindGroupLayout;
-    extern fn wgpuDeviceCreateBuffer(device: *Device, descriptor: *const BufferDescriptor) *Buffer;
-    extern fn wgpuDeviceCreateCommandEncoder(device: *Device, descriptor: *const CommandEncoderDescriptor) *CommandEncoder;
-    extern fn wgpuDeviceCreateComputePipeline(device: *Device, descriptor: *const ComputePipelineDescriptor) *ComputePipeline;
-    extern fn wgpuDeviceCreateComputePipelineAsync(device: *Device, descriptor: *const ComputePipelineDescriptor, callback: CreateComputePipelineAsyncCallback, userdata: ?*anyopaque) void;
-    extern fn wgpuDeviceCreatePipelineLayout(device: *Device, descriptor: *const PipelineLayoutDescriptor) *PipelineLayout;
-    extern fn wgpuDeviceCreateQuerySet(device: *Device, descriptor: *const QuerySetDescriptor) *QuerySet;
-    extern fn wgpuDeviceCreateRenderBundleEncoder(device: *Device, descriptor: *const RenderBundleEncoderDescriptor) *RenderBundleEncoder;
-    extern fn wgpuDeviceCreateRenderPipeline(device: *Device, descriptor: *const RenderPipelineDescriptor) *RenderPipeline;
-    extern fn wgpuDeviceCreateRenderPipelineAsync(device: *Device, descriptor: *const RenderPipelineDescriptor, callback: CreateRenderPipelineAsyncCallback, userdata: ?*anyopaque) void;
-    extern fn wgpuDeviceCreateSampler(device: *Device, descriptor: *const SamplerDescriptor) *Sampler;
-    extern fn wgpuDeviceCreateShaderModule(device: *Device, descriptor: *const ShaderModuleDescriptor) *ShaderModule;
-    extern fn wgpuDeviceCreateTexture(device: *Device, descriptor: *const TextureDescriptor) *Texture;
-    extern fn wgpuDeviceGetQueue(device: *Device) *Queue;
-    extern fn wgpuDeviceEnumerateFeatures(device: *Device, features: ?[*]FeatureName) usize;
-    extern fn wgpuDeviceGetLimits(device: *Device, limits: *SupportedLimits) Bool;
-    extern fn wgpuDeviceHasFeature(device: *Device, feature: FeatureName) Bool;
-    extern fn wgpuDevicePushErrorScope(device: *Device, filter: ErrorFilter) void;
-    extern fn wgpuDevicePopErrorScope(device: *Device, callback: ErrorCallback, userdata: ?*anyopaque) void;
-    extern fn wgpuDeviceSetUncapturedErrorCallback(device: *Device, callback: ErrorCallback, userdata: ?*anyopaque) void;
-
-    extern fn wgpuDeviceDestroy(device: *Device) void;
-    extern fn wgpuDeviceSetLabel(device: *Device, label: [*:0]const u8) void;
-    extern fn wgpuDeviceReference(device: *Device) void;
-    extern fn wgpuDeviceRelease(device: *Device) void;
-
-    //WGPU-Native stuff
-    extern fn wgpuDevicePoll(device: *Device, wait: Bool, wrapped_submission_index: *const WrappedSubmissionIndex) Bool;
+    extern fn wgpuRenderBundleReference(self: RenderBundle) void;
+    pub const reference = wgpuRenderBundleReference;
 };
 
-pub const Instance = opaque {
-    const RequestAdapterData = struct {
-        adapter: *Adapter = undefined,
-        status: RequestAdapterStatus = .unknown,
-        message: ?[*:0]const u8 = null,
-    };
+pub const RenderBundleEncoder = *opaque {
+    extern fn wgpuRenderBundleEncoderSetPipeline(self: RenderBundleEncoder, pipeline: RenderPipeline) void;
+    pub const setPipeline = wgpuRenderBundleEncoderSetPipeline;
 
-    fn handleAdapterRequest(
-        status: RequestAdapterStatus,
-        adapter: *Adapter,
-        message: ?[*:0]const u8,
-        userdata: ?*anyopaque,
-    ) callconv(.C) void {
-        const data: *RequestAdapterData = @ptrCast(@alignCast(userdata.?));
-        data.* = .{
-            .adapter = adapter,
-            .status = status,
-            .message = message,
-        };
+    extern fn wgpuRenderBundleEncoderSetBindGroup(self: RenderBundleEncoder, group_index: u32, group: ?BindGroup, dynamic_offset_count: usize, dynamic_offsets: [*]const u32) void;
+    pub inline fn setBindGroup(self: RenderBundleEncoder, group_index: u32, group: ?BindGroup, dynamic_offsets: []const u32) void {
+        return wgpuRenderBundleEncoderSetBindGroup(self, group_index, group, dynamic_offsets.len, dynamic_offsets.ptr);
     }
 
-    pub fn create(descriptor: InstanceDescriptor) *Instance {
-        return wgpuCreateInstance(&descriptor);
-    }
+    extern fn wgpuRenderBundleEncoderDraw(self: RenderBundleEncoder, vertex_count: u32, instance_count: u32, first_vertex: u32, first_instance: u32) void;
+    pub const draw = wgpuRenderBundleEncoderDraw;
 
-    pub fn requestAdapter(instance: *Instance, options: RequestAdapterOptions) !*Adapter {
-        var data = RequestAdapterData{};
-        wgpuInstanceRequestAdapter(
-            instance,
-            &options,
-            handleAdapterRequest,
-            @ptrCast(&data),
-        );
+    extern fn wgpuRenderBundleEncoderDrawIndexed(self: RenderBundleEncoder, index_count: u32, instance_count: u32, first_index: u32, base_vertex: i32, first_instance: u32) void;
+    pub const drawIndexed = wgpuRenderBundleEncoderDrawIndexed;
 
-        if (data.status == .success) {
-            return data.adapter;
-        } else {
-            log.err(
-                "Adapter request failed. status: {s}, message: {s}",
-                .{ @tagName(data.status), data.message.? },
-            );
-            return error.WGPURequestAdapterFailed;
-        }
-    }
+    extern fn wgpuRenderBundleEncoderDrawIndirect(self: RenderBundleEncoder, indirect_buffer: Buffer, indirect_offset: u64) void;
+    pub const drawIndirect = wgpuRenderBundleEncoderDrawIndirect;
 
-    pub fn createSurface(self: *Instance, descriptor: SurfaceDescriptor) *Surface {
-        return wgpuInstanceCreateSurface(self, &descriptor);
-    }
+    extern fn wgpuRenderBundleEncoderDrawIndexedIndirect(self: RenderBundleEncoder, indirect_buffer: Buffer, indirect_offset: u64) void;
+    pub const drawIndexedIndirect = wgpuRenderBundleEncoderDrawIndexedIndirect;
 
-    pub fn release(self: *Instance) void {
-        wgpuInstanceRelease(self);
-    }
+    extern fn wgpuRenderBundleEncoderInsertDebugMarker(self: RenderBundleEncoder, marker_label: [*:0]const u8) void;
+    pub const insertDebugMarker = wgpuRenderBundleEncoderInsertDebugMarker;
 
-    extern fn wgpuCreateInstance(descriptor: ?*const InstanceDescriptor) *Instance;
-    extern fn wgpuInstanceCreateSurface(instance: *Instance, descriptor: *const SurfaceDescriptor) *Surface;
-    extern fn wgpuInstanceProcessEvents(instance: *Instance) void;
-    extern fn wgpuInstanceRequestAdapter(instance: *Instance, options: *const RequestAdapterOptions, callback: RequestAdapterCallback, userdata: ?*anyopaque) void;
-    extern fn wgpuInstanceReference(instance: *Instance) void;
-    extern fn wgpuInstanceRelease(instance: *Instance) void;
+    extern fn wgpuRenderBundleEncoderPopDebugGroup(self: RenderBundleEncoder) void;
+    pub const popDebugGroup = wgpuRenderBundleEncoderPopDebugGroup;
+
+    extern fn wgpuRenderBundleEncoderPushDebugGroup(self: RenderBundleEncoder, group_label: [*:0]const u8) void;
+    pub const pushDebugGroup = wgpuRenderBundleEncoderPushDebugGroup;
+
+    extern fn wgpuRenderBundleEncoderSetVertexBuffer(self: RenderBundleEncoder, slot: u32, buffer: ?Buffer, offset: u64, size: u64) void;
+    pub const setVertexBuffer = wgpuRenderBundleEncoderSetVertexBuffer;
+
+    extern fn wgpuRenderBundleEncoderSetIndexBuffer(self: RenderBundleEncoder, buffer: Buffer, format: IndexFormat, offset: u64, size: u64) void;
+    pub const setIndexBuffer = wgpuRenderBundleEncoderSetIndexBuffer;
+
+    extern fn wgpuRenderBundleEncoderFinish(self: RenderBundleEncoder, descriptor: ?*const RenderBundleDescriptor) RenderBundle;
+    pub const finish = wgpuRenderBundleEncoderFinish;
+
+    extern fn wgpuRenderBundleEncoderSetLabel(self: RenderBundleEncoder, label: [*:0]const u8) void;
+    pub const setLabel = wgpuRenderBundleEncoderSetLabel;
+
+    extern fn wgpuRenderBundleEncoderRelease(self: RenderBundleEncoder) void;
+    pub const release = wgpuRenderBundleEncoderRelease;
+
+    extern fn wgpuRenderBundleEncoderReference(self: RenderBundleEncoder) void;
+    pub const reference = wgpuRenderBundleEncoderReference;
 };
 
-pub const PipelineLayout = opaque {
-    pub fn release(self: *PipelineLayout) void {
-        wgpuPipelineLayoutRelease(self);
+pub const RenderPassEncoder = *opaque {
+    extern fn wgpuRenderPassEncoderSetPipeline(self: RenderPassEncoder, pipeline: RenderPipeline) void;
+    pub const setPipeline = wgpuRenderPassEncoderSetPipeline;
+
+    extern fn wgpuRenderPassEncoderSetBindGroup(self: RenderPassEncoder, group_index: u32, group: ?BindGroup, dynamic_offset_count: usize, dynamic_offsets: [*]const u32) void;
+    pub inline fn setBindGroup(self: RenderPassEncoder, group_index: u32, group: ?BindGroup, dynamic_offsets: []const u32) void {
+        return wgpuRenderPassEncoderSetBindGroup(self, group_index, group, dynamic_offsets.len, dynamic_offsets.ptr);
     }
 
-    extern fn wgpuPipelineLayoutSetLabel(pipeline_layout: *PipelineLayout, label: [*:0]const u8) void;
-    extern fn wgpuPipelineLayoutReference(pipeline_layout: *PipelineLayout) void;
-    extern fn wgpuPipelineLayoutRelease(pipeline_layout: *PipelineLayout) void;
+    extern fn wgpuRenderPassEncoderDraw(self: RenderPassEncoder, vertex_count: u32, instance_count: u32, first_vertex: u32, first_instance: u32) void;
+    pub const draw = wgpuRenderPassEncoderDraw;
+
+    extern fn wgpuRenderPassEncoderDrawIndexed(self: RenderPassEncoder, index_count: u32, instance_count: u32, first_index: u32, base_vertex: i32, first_instance: u32) void;
+    pub const drawIndexed = wgpuRenderPassEncoderDrawIndexed;
+
+    extern fn wgpuRenderPassEncoderDrawIndirect(self: RenderPassEncoder, indirect_buffer: Buffer, indirect_offset: u64) void;
+    pub const drawIndirect = wgpuRenderPassEncoderDrawIndirect;
+
+    extern fn wgpuRenderPassEncoderDrawIndexedIndirect(self: RenderPassEncoder, indirect_buffer: Buffer, indirect_offset: u64) void;
+    pub const drawIndexedIndirect = wgpuRenderPassEncoderDrawIndexedIndirect;
+
+    extern fn wgpuRenderPassEncoderExecuteBundles(self: RenderPassEncoder, bundle_count: usize, bundles: [*]const RenderBundle) void;
+    pub inline fn executeBundles(self: RenderPassEncoder, bundles: []const RenderBundle) void {
+        return wgpuRenderPassEncoderExecuteBundles(self, bundles.len, bundles.ptr);
+    }
+
+    extern fn wgpuRenderPassEncoderInsertDebugMarker(self: RenderPassEncoder, marker_label: [*:0]const u8) void;
+    pub const insertDebugMarker = wgpuRenderPassEncoderInsertDebugMarker;
+
+    extern fn wgpuRenderPassEncoderPopDebugGroup(self: RenderPassEncoder) void;
+    pub const popDebugGroup = wgpuRenderPassEncoderPopDebugGroup;
+
+    extern fn wgpuRenderPassEncoderPushDebugGroup(self: RenderPassEncoder, group_label: [*:0]const u8) void;
+    pub const pushDebugGroup = wgpuRenderPassEncoderPushDebugGroup;
+
+    extern fn wgpuRenderPassEncoderSetStencilReference(self: RenderPassEncoder, reference: u32) void;
+    pub const setStencilReference = wgpuRenderPassEncoderSetStencilReference;
+
+    extern fn wgpuRenderPassEncoderSetBlendConstant(self: RenderPassEncoder, color: *const Color) void;
+    pub const setBlendConstant = wgpuRenderPassEncoderSetBlendConstant;
+
+    extern fn wgpuRenderPassEncoderSetViewport(self: RenderPassEncoder, x: f32, y: f32, width: f32, height: f32, min_depth: f32, max_depth: f32) void;
+    pub const setViewport = wgpuRenderPassEncoderSetViewport;
+
+    extern fn wgpuRenderPassEncoderSetScissorRect(self: RenderPassEncoder, x: u32, y: u32, width: u32, height: u32) void;
+    pub const setScissorRect = wgpuRenderPassEncoderSetScissorRect;
+
+    extern fn wgpuRenderPassEncoderSetVertexBuffer(self: RenderPassEncoder, slot: u32, buffer: ?Buffer, offset: u64, size: u64) void;
+    pub const setVertexBuffer = wgpuRenderPassEncoderSetVertexBuffer;
+
+    extern fn wgpuRenderPassEncoderSetIndexBuffer(self: RenderPassEncoder, buffer: Buffer, format: IndexFormat, offset: u64, size: u64) void;
+    pub const setIndexBuffer = wgpuRenderPassEncoderSetIndexBuffer;
+
+    extern fn wgpuRenderPassEncoderBeginOcclusionQuery(self: RenderPassEncoder, query_index: u32) void;
+    pub const beginOcclusionQuery = wgpuRenderPassEncoderBeginOcclusionQuery;
+
+    extern fn wgpuRenderPassEncoderEndOcclusionQuery(self: RenderPassEncoder) void;
+    pub const endOcclusionQuery = wgpuRenderPassEncoderEndOcclusionQuery;
+
+    extern fn wgpuRenderPassEncoderEnd(self: RenderPassEncoder) void;
+    pub const end = wgpuRenderPassEncoderEnd;
+
+    extern fn wgpuRenderPassEncoderSetLabel(self: RenderPassEncoder, label: [*:0]const u8) void;
+    pub const setLabel = wgpuRenderPassEncoderSetLabel;
+
+    extern fn wgpuRenderPassEncoderRelease(self: RenderPassEncoder) void;
+    pub const release = wgpuRenderPassEncoderRelease;
+
+    extern fn wgpuRenderPassEncoderReference(self: RenderPassEncoder) void;
+    pub const reference = wgpuRenderPassEncoderReference;
 };
 
-pub const QuerySet = opaque {
-    pub fn release(self: *QuerySet) void {
-        wgpuQuerySetRelease(self);
-    }
+pub const RenderPipeline = *opaque {
+    extern fn wgpuRenderPipelineGetBindGroupLayout(self: RenderPipeline, group_index: u32) BindGroupLayout;
+    pub const getBindGroupLayout = wgpuRenderPipelineGetBindGroupLayout;
 
-    extern fn wgpuQuerySetDestroy(query_set: *QuerySet) void;
-    extern fn wgpuQuerySetGetCount(query_set: *QuerySet) u32;
-    extern fn wgpuQuerySetGetType(query_set: *QuerySet) QueryType;
-    extern fn wgpuQuerySetSetLabel(query_set: *QuerySet, label: [*:0]const u8) void;
-    extern fn wgpuQuerySetReference(query_set: *QuerySet) void;
-    extern fn wgpuQuerySetRelease(query_set: *QuerySet) void;
+    extern fn wgpuRenderPipelineSetLabel(self: RenderPipeline, label: [*:0]const u8) void;
+    pub const setLabel = wgpuRenderPipelineSetLabel;
+
+    extern fn wgpuRenderPipelineRelease(self: RenderPipeline) void;
+    pub const release = wgpuRenderPipelineRelease;
+
+    extern fn wgpuRenderPipelineReference(self: RenderPipeline) void;
+    pub const reference = wgpuRenderPipelineReference;
 };
 
-pub const Queue = opaque {
-    pub fn submit(self: *Queue, commands: []const *CommandBuffer) void {
-        wgpuQueueSubmit(self, commands.len, commands.ptr);
-    }
+pub const Sampler = *opaque {
+    extern fn wgpuSamplerSetLabel(self: Sampler, label: [*:0]const u8) void;
+    pub const setLabel = wgpuSamplerSetLabel;
 
-    pub fn writeBuffer(self: *Queue, buffer: *Buffer, buffer_offset: u64, ptr: *const anyopaque, size: usize) void {
-        wgpuQueueWriteBuffer(self, buffer, buffer_offset, ptr, size);
-    }
+    extern fn wgpuSamplerRelease(self: Sampler) void;
+    pub const release = wgpuSamplerRelease;
 
-    pub fn writeTexture(self: *Queue, destination: ImageCopyTexture, data: *const anyopaque, data_size: usize, data_layout: TextureDataLayout, write_size: Extent3D) void {
-        wgpuQueueWriteTexture(self, &destination, data, data_size, &data_layout, &write_size);
-    }
-
-    pub fn onSubmittedWorkDone(self: *Queue, callback: QueueWorkDoneCallback, userdata: ?*anyopaque) void {
-        wgpuQueueOnSubmittedWorkDone(self, callback, userdata);
-    }
-
-    pub fn release(self: *Queue) void {
-        wgpuQueueRelease(self);
-    }
-
-    // WGPU-Native stuff
-    pub fn submitForIndex(self: *Queue, commands: []const *CommandBuffer) SubmissionIndex {
-        return wgpuQueueSubmitForIndex(self, commands.len, commands.ptr);
-    }
-
-    extern fn wgpuQueueSubmit(queue: *Queue, command_count: usize, commands: [*]const *CommandBuffer) void;
-    extern fn wgpuQueueWriteBuffer(queue: *Queue, buffer: *Buffer, buffer_offset: u64, data: *const anyopaque, size: usize) void;
-    extern fn wgpuQueueWriteTexture(queue: *Queue, destination: *const ImageCopyTexture, data: *const anyopaque, data_size: usize, data_layout: *const TextureDataLayout, write_size: *const Extent3D) void;
-    extern fn wgpuQueueOnSubmittedWorkDone(queue: *Queue, callback: QueueWorkDoneCallback, userdata: ?*anyopaque) void;
-    extern fn wgpuQueueSetLabel(queue: *Queue, label: [*c]const u8) void;
-    extern fn wgpuQueueReference(queue: *Queue) void;
-    extern fn wgpuQueueRelease(queue: *Queue) void;
-
-    // WGPU-Native stuff
-    extern fn wgpuQueueSubmitForIndex(queue: *Queue, command_count: usize, [*]const *CommandBuffer) SubmissionIndex;
+    extern fn wgpuSamplerReference(self: Sampler) void;
+    pub const reference = wgpuSamplerReference;
 };
 
-pub const RenderBundle = opaque {
-    pub fn release(self: *RenderBundle) void {
-        wgpuRenderBundleRelease(self);
-    }
+pub const ShaderModule = *opaque {
+    pub const GetCompilationInfoCallback = *const fn (status: CompilationInfoRequestStatus, compilation_info: *const CompilationInfo, userdata: ?*anyopaque) callconv(.C) void;
+    extern fn wgpuShaderModuleGetCompilationInfo(self: ShaderModule, callback: GetCompilationInfoCallback, userdata: ?*anyopaque) void;
+    pub const getCompilationInfo = wgpuShaderModuleGetCompilationInfo;
 
-    extern fn wgpuRenderBundleSetLabel(render_bundle: *RenderBundle, label: [*:0]const u8) void;
-    extern fn wgpuRenderBundleReference(render_bundle: *RenderBundle) void;
-    extern fn wgpuRenderBundleRelease(render_bundle: *RenderBundle) void;
+    extern fn wgpuShaderModuleSetLabel(self: ShaderModule, label: [*:0]const u8) void;
+    pub const setLabel = wgpuShaderModuleSetLabel;
+
+    extern fn wgpuShaderModuleRelease(self: ShaderModule) void;
+    pub const release = wgpuShaderModuleRelease;
+
+    extern fn wgpuShaderModuleReference(self: ShaderModule) void;
+    pub const reference = wgpuShaderModuleReference;
 };
 
-pub const RenderBundleEncoder = opaque {
-    pub fn draw(self: *RenderBundleEncoder, vertex_count: u32, instance_count: u32, first_vertex: u32, first_instance: u32) void {
-        wgpuRenderBundleEncoderDraw(self, vertex_count, instance_count, first_vertex, first_instance);
-    }
+pub const Surface = *opaque {
+    extern fn wgpuSurfaceConfigure(self: Surface, config: *const SurfaceConfiguration) void;
+    pub const configure = wgpuSurfaceConfigure;
 
-    pub fn drawIndirect(self: *RenderBundleEncoder, indirect_buffer: *Buffer, indirect_offset: u64) void {
-        wgpuRenderBundleEncoderDrawIndirect(self, indirect_buffer, indirect_offset);
-    }
+    extern fn wgpuSurfaceGetCapabilities(self: Surface, adapter: Adapter, capabilities: *SurfaceCapabilities) void;
+    pub const getCapabilities = wgpuSurfaceGetCapabilities;
 
-    pub fn drawIndexed(self: *RenderBundleEncoder, index_count: u32, instance_count: u32, first_index: u32, base_vertex: i32, first_instance: u32) void {
-        wgpuRenderBundleEncoderDrawIndexed(self, index_count, instance_count, first_index, base_vertex, first_instance);
-    }
+    extern fn wgpuSurfaceGetCurrentTexture(self: Surface, surface_texture: *SurfaceTexture) void;
+    pub const getCurrentTexture = wgpuSurfaceGetCurrentTexture;
 
-    pub fn drawIndexedIndirect(self: *RenderBundleEncoder, indirect_buffer: *Buffer, indirect_offset: u64) void {
-        wgpuRenderBundleEncoderDrawIndexedIndirect(self, indirect_buffer, indirect_offset);
-    }
+    extern fn wgpuSurfacePresent(self: Surface) void;
+    pub const present = wgpuSurfacePresent;
 
-    pub fn setIndexBuffer(self: *RenderBundleEncoder, buffer: *Buffer, format: IndexFormat, offset: u64, size: u64) void {
-        wgpuRenderBundleEncoderSetIndexBuffer(self, buffer, format, offset, size);
-    }
+    extern fn wgpuSurfaceUnconfigure(self: Surface) void;
+    pub const unconfigure = wgpuSurfaceUnconfigure;
 
-    pub fn setVertexBuffer(self: *RenderBundleEncoder, slot: u32, buffer: *Buffer, offset: u64, size: u64) void {
-        wgpuRenderBundleEncoderSetVertexBuffer(self, slot, buffer, offset, size);
-    }
+    extern fn wgpuSurfaceSetLabel(self: Surface, label: [*:0]const u8) void;
+    pub const setLabel = wgpuSurfaceSetLabel;
 
-    pub fn setBindGroup(self: *RenderBundleEncoder, group_index: u32, group: *BindGroup, dynamic_offsets: []const u32) void {
-        wgpuRenderBundleEncoderSetBindGroup(self, group_index, group, dynamic_offsets.len, dynamic_offsets.ptr);
-    }
+    extern fn wgpuSurfaceRelease(self: Surface) void;
+    pub const release = wgpuSurfaceRelease;
 
-    pub fn setPipeline(self: *RenderBundleEncoder, pipeline: *RenderPipeline) void {
-        wgpuRenderBundleEncoderSetPipeline(self, pipeline);
-    }
-
-    pub fn finish(self: *RenderBundleEncoder, descriptor: RenderBundleDescriptor) *RenderBundle {
-        return wgpuRenderBundleEncoderFinish(self, &descriptor);
-    }
-
-    pub fn release(self: *RenderBundleEncoder) void {
-        wgpuRenderBundleEncoderRelease(self);
-    }
-
-    extern fn wgpuRenderBundleEncoderDraw(render_bundle_encoder: *RenderBundleEncoder, vertex_count: u32, instance_count: u32, first_vertex: u32, first_instance: u32) void;
-    extern fn wgpuRenderBundleEncoderDrawIndirect(render_bundle_encoder: *RenderBundleEncoder, indirect_buffer: *Buffer, indirect_offset: u64) void;
-    extern fn wgpuRenderBundleEncoderDrawIndexed(render_bundle_encoder: *RenderBundleEncoder, index_count: u32, instance_count: u32, first_index: u32, base_vertex: i32, first_instance: u32) void;
-    extern fn wgpuRenderBundleEncoderDrawIndexedIndirect(render_bundle_encoder: *RenderBundleEncoder, indirect_buffer: *Buffer, indirect_offset: u64) void;
-    extern fn wgpuRenderBundleEncoderSetIndexBuffer(render_bundle_encoder: *RenderBundleEncoder, buffer: *Buffer, format: IndexFormat, offset: u64, size: u64) void;
-    extern fn wgpuRenderBundleEncoderSetVertexBuffer(render_bundle_encoder: *RenderBundleEncoder, slot: u32, buffer: *Buffer, offset: u64, size: u64) void;
-    extern fn wgpuRenderBundleEncoderSetBindGroup(render_bundle_encoder: *RenderBundleEncoder, group_index: u32, group: *BindGroup, dynamic_offset_count: usize, dynamic_offsets: [*]const u32) void;
-    extern fn wgpuRenderBundleEncoderSetPipeline(render_bundle_encoder: *RenderBundleEncoder, pipeline: *RenderPipeline) void;
-    extern fn wgpuRenderBundleEncoderFinish(render_bundle_encoder: *RenderBundleEncoder, descriptor: *const RenderBundleDescriptor) *RenderBundle;
-
-    extern fn wgpuRenderBundleEncoderInsertDebugMarker(render_bundle_encoder: *RenderBundleEncoder, marker_label: [*:0]const u8) void;
-    extern fn wgpuRenderBundleEncoderPopDebugGroup(renderBundleEncoder: *RenderBundleEncoder) void;
-    extern fn wgpuRenderBundleEncoderPushDebugGroup(render_bundle_encoder: *RenderBundleEncoder, group_label: [*:0]const u8) void;
-    extern fn wgpuRenderBundleEncoderSetLabel(render_bundle_encoder: *RenderBundleEncoder, label: [*:0]const u8) void;
-    extern fn wgpuRenderBundleEncoderReference(render_bundle_encoder: *RenderBundleEncoder) void;
-    extern fn wgpuRenderBundleEncoderRelease(render_bundle_encoder: *RenderBundleEncoder) void;
+    extern fn wgpuSurfaceReference(self: Surface) void;
+    pub const reference = wgpuSurfaceReference;
 };
 
-pub const RenderPassEncoder = opaque {
-    pub fn draw(self: *RenderPassEncoder, vertex_count: u32, instance_count: u32, first_vertex: u32, first_instance: u32) void {
-        wgpuRenderPassEncoderDraw(self, vertex_count, instance_count, first_vertex, first_instance);
-    }
+pub const Texture = *opaque {
+    extern fn wgpuTextureCreateView(self: Texture, descriptor: ?*const TextureViewDescriptor) TextureView;
+    pub const createView = wgpuTextureCreateView;
 
-    pub fn drawIndirect(self: *RenderPassEncoder, indirect_buffer: *Buffer, indirect_offset: u64) void {
-        wgpuRenderPassEncoderDrawIndirect(self, indirect_buffer, indirect_offset);
-    }
+    extern fn wgpuTextureSetLabel(self: Texture, label: [*:0]const u8) void;
+    pub const setLabel = wgpuTextureSetLabel;
 
-    pub fn drawIndexed(self: *RenderPassEncoder, index_count: u32, instance_count: u32, first_index: u32, base_vertex: i32, first_instance: u32) void {
-        wgpuRenderPassEncoderDrawIndexed(self, index_count, instance_count, first_index, base_vertex, first_instance);
-    }
+    extern fn wgpuTextureGetWidth(self: Texture) u32;
+    pub const getWidth = wgpuTextureGetWidth;
 
-    pub fn drawIndexedIndirect(self: *RenderPassEncoder, indirect_buffer: *Buffer, indirect_offset: u64) void {
-        wgpuRenderPassEncoderDrawIndexedIndirect(self, indirect_buffer, indirect_offset);
-    }
+    extern fn wgpuTextureGetHeight(self: Texture) u32;
+    pub const getHeight = wgpuTextureGetHeight;
 
-    pub fn setBindGroup(self: *RenderPassEncoder, group_index: u32, group: *BindGroup, dynamic_offsets: []const u32) void {
-        wgpuRenderPassEncoderSetBindGroup(self, group_index, group, dynamic_offsets.len, dynamic_offsets.ptr);
-    }
+    extern fn wgpuTextureGetDepthOrArrayLayers(self: Texture) u32;
+    pub const getDepthOrArrayLayers = wgpuTextureGetDepthOrArrayLayers;
 
-    pub fn setPipeline(self: *RenderPassEncoder, pipeline: *RenderPipeline) void {
-        wgpuRenderPassEncoderSetPipeline(self, pipeline);
-    }
+    extern fn wgpuTextureGetMipLevelCount(self: Texture) u32;
+    pub const getMipLevelCount = wgpuTextureGetMipLevelCount;
 
-    pub fn setIndexBuffer(self: *RenderPassEncoder, buffer: *Buffer, format: IndexFormat, offset: u64, size: u64) void {
-        wgpuRenderPassEncoderSetIndexBuffer(self, buffer, format, offset, size);
-    }
+    extern fn wgpuTextureGetSampleCount(self: Texture) u32;
+    pub const getSampleCount = wgpuTextureGetSampleCount;
 
-    pub fn setVertexBuffer(self: *RenderPassEncoder, slot: u32, buffer: *Buffer, offset: u64, size: u64) void {
-        wgpuRenderPassEncoderSetVertexBuffer(self, slot, buffer, offset, size);
-    }
+    extern fn wgpuTextureGetDimension(self: Texture) TextureDimension;
+    pub const getDimension = wgpuTextureGetDimension;
 
-    pub fn setViewport(self: *RenderPassEncoder, x: f32, y: f32, width: f32, height: f32, min_depth: f32, max_depth: f32) void {
-        wgpuRenderPassEncoderSetViewport(self, x, y, width, height, min_depth, max_depth);
-    }
+    extern fn wgpuTextureGetFormat(self: Texture) TextureFormat;
+    pub const getFormat = wgpuTextureGetFormat;
 
-    pub fn setScissorRect(self: *RenderPassEncoder, x: u32, y: u32, width: u32, height: u32) void {
-        wgpuRenderPassEncoderSetScissorRect(self, x, y, width, height);
-    }
+    extern fn wgpuTextureGetUsage(self: Texture) TextureUsage;
+    pub const getUsage = wgpuTextureGetUsage;
 
-    pub fn setBlendConstant(self: *RenderPassEncoder, color: Color) void {
-        wgpuRenderPassEncoderSetBlendConstant(self, &color);
-    }
+    extern fn wgpuTextureDestroy(self: Texture) void;
+    pub const destroy = wgpuTextureDestroy;
 
-    pub fn setStencilReference(self: *RenderPassEncoder, reference: u32) void {
-        wgpuRenderPassEncoderSetStencilReference(self, reference);
-    }
+    extern fn wgpuTextureRelease(self: Texture) void;
+    pub const release = wgpuTextureRelease;
 
-    pub fn executeBundles(self: *RenderPassEncoder, bundles: []const *RenderBundle) void {
-        wgpuRenderPassEncoderExecuteBundles(self, bundles.len, bundles.ptr);
-    }
-
-    pub fn end(self: *RenderPassEncoder) void {
-        wgpuRenderPassEncoderEnd(self);
-    }
-
-    // WGPU-Native Stuff
-    pub fn multiDrawIndirect(self: *RenderPassEncoder, buffer: *Buffer, offset: u64, count: u32) void {
-        wgpuRenderPassEncoderMultiDrawIndirect(self, buffer, offset, count);
-    }
-
-    pub fn multiDrawIndexedIndirect(self: *RenderPassEncoder, buffer: *Buffer, offset: u64, count: u32) void {
-        wgpuRenderPassEncoderMultiDrawIndexedIndirect(self, buffer, offset, count);
-    }
-
-    pub fn multiDrawIndirectCount(self: *RenderPassEncoder, buffer: *Buffer, offset: u64, count_buffer: *Buffer, count_buffer_offset: u64, max_count: u32) void {
-        wgpuRenderPassEncoderMultiDrawIndirectCount(self, buffer, offset, count_buffer, count_buffer_offset, max_count);
-    }
-
-    pub fn multiDrawIndexedIndirectCount(self: *RenderPassEncoder, buffer: *Buffer, offset: u64, count_buffer: *Buffer, count_buffer_offset: u64, max_count: u32) void {
-        wgpuRenderPassEncoderMultiDrawIndexedIndirectCount(self, buffer, offset, count_buffer, count_buffer_offset, max_count);
-    }
-
-    extern fn wgpuRenderPassEncoderDraw(render_pass_encoder: *RenderPassEncoder, vertex_count: u32, instance_count: u32, first_vertex: u32, first_instance: u32) void;
-    extern fn wgpuRenderPassEncoderDrawIndirect(render_pass_encoder: *RenderPassEncoder, indirect_buffer: *Buffer, indirect_offset: u64) void;
-    extern fn wgpuRenderPassEncoderDrawIndexed(render_pass_encoder: *RenderPassEncoder, index_count: u32, instance_count: u32, first_index: u32, base_vertex: i32, first_instance: u32) void;
-    extern fn wgpuRenderPassEncoderDrawIndexedIndirect(render_pass_encoder: *RenderPassEncoder, indirect_buffer: *Buffer, indirect_offset: u64) void;
-    extern fn wgpuRenderPassEncoderSetBindGroup(render_pass_encoder: *RenderPassEncoder, group_index: u32, group: *BindGroup, dynamic_offset_count: usize, dynamic_offsets: [*]const u32) void;
-    extern fn wgpuRenderPassEncoderSetPipeline(render_pass_encoder: *RenderPassEncoder, pipeline: *RenderPipeline) void;
-    extern fn wgpuRenderPassEncoderSetIndexBuffer(render_pass_encoder: *RenderPassEncoder, buffer: *Buffer, format: IndexFormat, offset: u64, size: u64) void;
-    extern fn wgpuRenderPassEncoderSetVertexBuffer(render_pass_encoder: *RenderPassEncoder, slot: u32, buffer: *Buffer, offset: u64, size: u64) void;
-    extern fn wgpuRenderPassEncoderSetViewport(render_pass_encoder: *RenderPassEncoder, x: f32, y: f32, width: f32, height: f32, min_depth: f32, max_depth: f32) void;
-    extern fn wgpuRenderPassEncoderSetScissorRect(render_pass_encoder: *RenderPassEncoder, x: u32, y: u32, width: u32, height: u32) void;
-    extern fn wgpuRenderPassEncoderSetBlendConstant(render_pass_encoder: *RenderPassEncoder, color: *const Color) void;
-    extern fn wgpuRenderPassEncoderSetStencilReference(render_pass_encoder: *RenderPassEncoder, reference: u32) void;
-    extern fn wgpuRenderPassEncoderExecuteBundles(render_pass_encoder: *RenderPassEncoder, bundle_count: usize, bundles: [*]const *RenderBundle) void;
-    extern fn wgpuRenderPassEncoderEnd(render_pass_encoder: *RenderPassEncoder) void;
-
-    extern fn wgpuRenderPassEncoderBeginOcclusionQuery(render_pass_encoder: *RenderPassEncoder, query_index: u32) void;
-    extern fn wgpuRenderPassEncoderEndOcclusionQuery(render_pass_encoder: *RenderPassEncoder) void;
-    extern fn wgpuRenderPassEncoderInsertDebugMarker(render_pass_encoder: *RenderPassEncoder, marker_label: [*:0]const u8) void;
-    extern fn wgpuRenderPassEncoderPopDebugGroup(render_pass_encoder: *RenderPassEncoder) void;
-    extern fn wgpuRenderPassEncoderPushDebugGroup(render_pass_encoder: *RenderPassEncoder, group_label: [*:0]const u8) void;
-    extern fn wgpuRenderPassEncoderSetLabel(render_pass_encoder: *RenderPassEncoder, label: [*:0]const u8) void;
-    extern fn wgpuRenderPassEncoderReference(render_pass_encoder: *RenderPassEncoder) void;
-    extern fn wgpuRenderPassEncoderRelease(render_pass_encoder: *RenderPassEncoder) void;
-
-    // WGPU-Native Stuff
-    extern fn wgpuRenderPassEncoderMultiDrawIndirect(render_pass_encoder: *RenderPassEncoder, buffer: *Buffer, offset: u64, count: u32) void;
-    extern fn wgpuRenderPassEncoderMultiDrawIndexedIndirect(render_pass_encoder: *RenderPassEncoder, buffer: *Buffer, offset: u64, count: u32) void;
-    extern fn wgpuRenderPassEncoderMultiDrawIndirectCount(render_pass_encoder: *RenderPassEncoder, buffer: *Buffer, offset: u64, count_buffer: *Buffer, count_buffer_offset: u64, max_count: u32) void;
-    extern fn wgpuRenderPassEncoderMultiDrawIndexedIndirectCount(render_pass_encoder: *RenderPassEncoder, buffer: *Buffer, offset: u64, count_buffer: *Buffer, count_buffer_offset: u64, max_count: u32) void;
+    extern fn wgpuTextureReference(self: Texture) void;
+    pub const reference = wgpuTextureReference;
 };
 
-pub const RenderPipeline = opaque {
-    pub fn getBindGroupLayout(self: *RenderPipeline, group_index: u32) *BindGroupLayout {
-        return wgpuRenderPipelineGetBindGroupLayout(self, group_index);
-    }
+pub const TextureView = *opaque {
+    extern fn wgpuTextureViewSetLabel(self: TextureView, label: [*:0]const u8) void;
+    pub const setLabel = wgpuTextureViewSetLabel;
 
-    pub fn release(self: *RenderPipeline) void {
-        wgpuRenderPipelineRelease(self);
-    }
+    extern fn wgpuTextureViewRelease(self: TextureView) void;
+    pub const release = wgpuTextureViewRelease;
 
-    extern fn wgpuRenderPipelineGetBindGroupLayout(render_pipeline: *RenderPipeline, group_index: u32) *BindGroupLayout;
-    extern fn wgpuRenderPipelineSetLabel(render_pipeline: *RenderPipeline, label: [*:0]const u8) void;
-    extern fn wgpuRenderPipelineReference(render_pipeline: *RenderPipeline) void;
-    extern fn wgpuRenderPipelineRelease(render_pipeline: *RenderPipeline) void;
+    extern fn wgpuTextureViewReference(self: TextureView) void;
+    pub const reference = wgpuTextureViewReference;
 };
-
-pub const Sampler = opaque {
-    pub fn release(self: *Sampler) void {
-        wgpuSamplerRelease(self);
-    }
-
-    extern fn wgpuSamplerSetLabel(sampler: *Sampler, label: [*:0]const u8) void;
-    extern fn wgpuSamplerReference(sampler: *Sampler) void;
-    extern fn wgpuSamplerRelease(sampler: *Sampler) void;
-};
-
-pub const ShaderModule = opaque {
-    pub fn release(self: *ShaderModule) void {
-        wgpuShaderModuleRelease(self);
-    }
-
-    extern fn wgpuShaderModuleGetCompilationInfo(shader_module: *ShaderModule, callback: CompilationInfoCallback, userdata: ?*anyopaque) void;
-    extern fn wgpuShaderModuleSetLabel(shader_module: *ShaderModule, label: [*:0]const u8) void;
-    extern fn wgpuShaderModuleReference(shader_module: *ShaderModule) void;
-    extern fn wgpuShaderModuleRelease(shader_module: *ShaderModule) void;
-};
-
-pub const Surface = opaque {
-    pub fn configure(self: *Surface, config: SurfaceConfiguration) void {
-        wgpuSurfaceConfigure(self, &config);
-    }
-
-    pub fn unconfigure(self: *Surface) void {
-        wgpuSurfaceUnconfigure(self);
-    }
-
-    pub fn getGetCurrentTexture(self: *Surface) SurfaceTexture {
-        var tex: SurfaceTexture = undefined;
-        wgpuSurfaceGetCurrentTexture(self, &tex);
-        return tex;
-    }
-
-    pub fn getCapabilities(self: *Surface, adapter: *Adapter) SurfaceCapabilities {
-        var caps: SurfaceCapabilities = undefined;
-        wgpuSurfaceGetCapabilities(self, adapter, &caps);
-        return caps;
-    }
-
-    pub fn preset(self: *Surface) void {
-        wgpuSurfacePresent(self);
-    }
-
-    pub fn release(self: *Surface) void {
-        wgpuSurfaceRelease(self);
-    }
-
-    extern fn wgpuSurfaceConfigure(surface: *Surface, config: *const SurfaceConfiguration) void;
-    extern fn wgpuSurfaceGetCapabilities(surface: *Surface, adapter: *Adapter, capabilities: *SurfaceCapabilities) void;
-    extern fn wgpuSurfaceGetCurrentTexture(surface: *Surface, surface_texture: *SurfaceTexture) void;
-    extern fn wgpuSurfaceGetPreferredFormat(surface: *Surface, adapter: *Adapter) TextureFormat;
-    extern fn wgpuSurfacePresent(surface: *Surface) void;
-    extern fn wgpuSurfaceUnconfigure(surface: *Surface) void;
-    extern fn wgpuSurfaceReference(surface: *Surface) void;
-    extern fn wgpuSurfaceRelease(surface: *Surface) void;
-};
-
-pub const Texture = opaque {
-    pub fn createView(self: *Texture, descriptor: TextureViewDescriptor) *TextureView {
-        return wgpuTextureCreateView(self, &descriptor);
-    }
-
-    pub fn release(self: *Texture) void {
-        wgpuTextureRelease(self);
-    }
-
-    pub fn destroy(self: *Texture) void {
-        wgpuTextureDestroy(self);
-    }
-
-    extern fn wgpuTextureCreateView(texture: *Texture, descriptor: *const TextureViewDescriptor) *TextureView;
-    extern fn wgpuTextureDestroy(texture: *Texture) void;
-    extern fn wgpuTextureGetDepthOrArrayLayers(texture: *Texture) u32;
-    extern fn wgpuTextureGetDimension(texture: *Texture) TextureDimension;
-    extern fn wgpuTextureGetFormat(texture: *Texture) TextureFormat;
-    extern fn wgpuTextureGetHeight(texture: *Texture) u32;
-    extern fn wgpuTextureGetMipLevelCount(texture: *Texture) u32;
-    extern fn wgpuTextureGetSampleCount(texture: *Texture) u32;
-    extern fn wgpuTextureGetUsage(texture: *Texture) TextureUsageFlags;
-    extern fn wgpuTextureGetWidth(texture: *Texture) u32;
-    extern fn wgpuTextureSetLabel(texture: *Texture, label: [*:0]const u8) void;
-    extern fn wgpuTextureReference(texture: *Texture) void;
-    extern fn wgpuTextureRelease(texture: *Texture) void;
-};
-
-pub const TextureView = opaque {
-    pub fn release(self: *TextureView) void {
-        wgpuTextureViewRelease(self);
-    }
-
-    extern fn wgpuTextureViewSetLabel(texture_view: *TextureView, label: [*:0]const u8) void;
-    extern fn wgpuTextureViewReference(texture_view: *TextureView) void;
-    extern fn wgpuTextureViewRelease(texture_view: *TextureView) void;
-};
-
-extern fn wgpuGetProcAddress(device: *Device, proc_name: [*:0]const u8) ?Proc;
-
-// WGPU-Native stuff
-pub const DrawIndirect = extern struct {
-    vertex_count: u32,
-    instance_count: u32,
-    base_vertex: u32,
-    base_instance: u32,
-};
-
-pub const DrawIndexedIndirect = extern struct {
-    vertex_count: u32,
-    instance_count: u32,
-    base_index: u32,
-    vertex_offset: i32,
-    base_instance: u32,
-};
-
-pub const DrawIndirectCount = extern struct {
-    count: u32,
-};
-
-pub const LogLevel = enum(EnumType) {
-    off = 0x00000000,
-    err = 0x00000001,
-    warn = 0x00000002,
-    info = 0x00000003,
-    debug = 0x00000004,
-    trace = 0x00000005,
-};
-
-pub const Dx12Compiler = enum(EnumType) {
-    undef = 0x00000000,
-    fxc = 0x00000001,
-    dxc = 0x00000002,
-};
-
-pub const Gles3MinorVersion = enum(EnumType) {
-    automatic = 0x00000000,
-    version0 = 0x00000001,
-    version1 = 0x00000002,
-    version2 = 0x00000003,
-};
-
-pub const InstanceBackendFlags = packed struct(Flags) {
-    vulkan: bool = false,
-    gl: bool = false,
-    metal: bool = false,
-    dx12: bool = false,
-    dx11: bool = false,
-    browser_web_gpu: bool = false,
-
-    _padding: u26 = 0,
-
-    pub const primary = InstanceBackendFlags{
-        .vulkan = true,
-        .metal = true,
-        .dx12 = true,
-        .browser_web_gpu = true,
-    };
-
-    pub const secondary = InstanceBackendFlags{
-        .gl = true,
-        .dx11 = true,
-    };
-};
-
-pub const InstanceFlags = packed struct(Flags) {
-    debug: bool = false,
-    validation: bool = false,
-    discard_hal_labels: bool = false,
-
-    _padding: u29 = 0,
-};
-
-pub const SubmissionIndex = u64;
-
-pub const WrappedSubmissionIndex = extern struct {
-    queue: *Queue,
-    submission_index: SubmissionIndex,
-};
-
-pub const InstanceExtras = extern struct {
-    chain: ChainedStruct = .{ .s_type = .instance_extras },
-    backends: InstanceBackendFlags = .{},
-    flags: InstanceFlags = .{},
-    dx12_shader_compiler: Dx12Compiler = .undef,
-    gles3_minor_version: Gles3MinorVersion = .automatic,
-    dxil_path: ?[*:0]const u8 = null,
-    dxc_path: ?[*:0]const u8 = null,
-};
-
-pub const BindGroupEntryExtras = extern struct {
-    chain: ChainedStruct = .{ .s_type = .bind_group_entry_extras },
-    buffers: ?[*]const *Buffer,
-    buffer_count: usize,
-    samplers: ?[*]const *Sampler,
-    sampler_count: usize,
-    texture_views: ?[*]const *TextureView,
-    textureViewCount: usize,
-};
-
-pub const BindGroupLayoutEntryExtras = extern struct {
-    chain: ChainedStruct = .{ .s_type = .bind_group_layout_entry_extras },
-    count: u32,
-};
-
-pub const LogCallback = *const fn (level: LogLevel, message: [*:0]const u8, userdata: ?*anyopaque) callconv(.C) void;
-
-pub fn setLogCallback(callback: LogCallback, userdata: ?*anyopaque) void {
-    wgpuSetLogCallback(callback, userdata);
-}
-
-pub fn setLogLevel(level: LogLevel) void {
-    wgpuSetLogLevel(level);
-}
-
-pub fn getVersion() u32 {
-    return wgpuGetVersion();
-}
-
-extern fn wgpuSetLogCallback(callback: LogCallback, userdata: ?*anyopaque) void;
-extern fn wgpuSetLogLevel(level: LogLevel) void;
-extern fn wgpuGetVersion() u32;
